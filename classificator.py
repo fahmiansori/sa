@@ -216,8 +216,9 @@ class Vsm():
                     if t == col:
                         newdata[col]+=1
             df2 = df2.append(newdata,ignore_index=True)
-        print(df2.head())
+        # print(df2.head())
         # df2.to_csv('file.csv') #del first column (that is index data from dataframe)
 
         vs_model = {'vsm':df2,'column':column,'columnlen':columnlen}
+
         return vs_model

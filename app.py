@@ -27,11 +27,13 @@ class App():
 
         print('\n\n\n\n\n\n\n')
 
-        testdata = "Dikejar waktu biar bisa buat Pencitraan #prihatin"
         v = Vsm()
         vsm = v.vsm(df,exceptional_feature=self.exceptional_feature)
+        vsm = self.feature_selection.run(vsm,take_feature=10,exceptional_feature=self.exceptional_feature)
         nb = NaiveBayes()
         model = nb.builtmodel(vsm)
+
+        testdata = "kecewa tolong hati jalan kalimant tidak rubah musim hujan parah"
         nb.classify(testdata)
 
     def run2(self):
@@ -49,7 +51,7 @@ class App():
         # testdata = "Dikejar waktu biar bisa buat Pencitraan #prihatin"
         v = Vsm()
         vsm = v.vsm(df,exceptional_feature=self.exceptional_feature)
-        self.feature_selection.run(vsm,self.exceptional_feature)
+        vsm = self.feature_selection.run(vsm,exceptional_feature=self.exceptional_feature)
 
     def testrun(self):
         db_connection = pymysql.connect(host='localhost', user='root', passwd='', database='dataset_twitter',charset='utf8')
@@ -74,4 +76,4 @@ class App():
         nb.classify(testdata)
 
 app = App()
-app.run2()
+app.run()

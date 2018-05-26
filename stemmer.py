@@ -65,6 +65,8 @@ class ECSP():
                 if re.search(r'^(di|ke|se)\S{1,}', term):
                     if re.search(r'^((se)[r]|(kera))\S{1,}', term):
                         pass
+                    elif re.search(r'^(ke)[c]\S{1,}', term):
+                        pass
                     else:
                         term = re.sub(r'^(di|ke|se)','', term) #??? distribusi
                     if self.isSixChar(term):
