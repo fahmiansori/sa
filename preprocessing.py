@@ -61,10 +61,9 @@ class Preprocessing():
         cleantext = []
         for text in texts:
             newtext = text
-            if self.stemmer.isSixChar(newtext):
+            if self.stemmer.isSixChar(newtext) and not self.isRootWordDB(newtext):
                 newtext = self.checkWord(newtext)
             cleantext.append(newtext)
-        # cleantext = ' '.join(cleantext)
         return cleantext
 
     def removestopword(self,texts):
@@ -79,25 +78,42 @@ class Preprocessing():
                 cleantext.append(text)
         return cleantext
 
+    def isRootWordDB(self,text):
+        cursor = self.con.cursor()
+        sql = "SELECT * from root_word where rootword=%s"
+        try:
+            cursor.execute(sql,text)
+            # result = cursor.fetchall()
+            count = cursor.rowcount
+            if count < 1:
+                return False
+            cursor.close()
+        except :
+            print("Error check in DB.")
+
+        return True
+
     def checkWord(self,text):
         abbreviation_word = text
-        if len(self.unfixedWords) > 0:
+        if len(self.unfixedWords) > 0: # assume that word have no vocal character -> and re.search(r'^[^aeiou]+$',abbreviation_word)
             if abbreviation_word in self.unfixedWords:
                 indexWord = self.unfixedWords.index(abbreviation_word)
                 if self.fixedWords[indexWord]:
                     abbreviation_word = self.fixedWords[indexWord]
             else:
+                # if not self.isRootWordDB(abbreviation_word):
                 cursor = self.con.cursor()
-                # sqlinsert = "INSERT into fix_word set word='"+abbreviation_word+"'"
-                # try:
-                #     cursor.execute(sqlinsert)
-                #     print("Insert : Success")
-                # # except:
-                # except pymysql.InternalError:
-                #     print("Insert : Failed")
-                #     # print("Error in insert")
-                # cursor.close()
-                # self.con.commit()
+                sqlinsert = "INSERT into fix_word set word='"+abbreviation_word+"'"
+                try:
+                    cursor.execute(sqlinsert)
+                    print("Insert : Success")
+                # except:
+                except pymysql.InternalError:
+                    print("Insert : Failed")
+                    # print("Error in insert")
+                cursor.close()
+                self.con.commit()
+            # print(abbreviation_word)
 
         return abbreviation_word
 
@@ -106,7 +122,6 @@ class Preprocessing():
         for text in texts:
             if text:
                 newtext = self.stemmer.doStemming(text)
-                # newtext = text
                 cleantext.append(newtext)
         cleantext = ' '.join(cleantext)
         return cleantext
@@ -130,6 +145,6 @@ class Preprocessing():
         return result
 
 
-t = "sy suka dengan dia, namun dia tidak suka dengan saya, sangat mendebarkan @jokowi 2 periode"
+t = "sy suka dengan dia, namun dia tidak suka dengan saya dan dia, sangat mendebarkan @jokowi 2 periode"
 p = Preprocessing()
 print(p.process(t))
