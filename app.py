@@ -1,35 +1,58 @@
 import pymysql
 import pandas as pd
 from preprocessing import Preprocessing
-from naivebayes3 import NaiveBayes
-from naivebayes3 import Vsm
+from classificator import NaiveBayes
+from classificator import Vsm
 
-db_connection = pymysql.connect(host='localhost', user='root', passwd='', database='dataset_twitter',charset='utf8')
-df = pd.read_sql('SELECT * FROM tweet_2 order by id asc limit 0,9', con=db_connection)
-newdf2 = pd.DataFrame()
-keywordexcept = []
-p = Preprocessing(keywordexcept)
-for index,row in df.iterrows():
-    tweet = row['text']
-    pretext = p.process(tweet)
-    # print("Ori : ",tweet)
-    print("Preprocessed : ",pretext," -> ",row['clas'])
-    df.at[index,'text'] = pretext #update column tweet in dataframe
+class App():
+    def __init__(self):
+        db = "dataset_twitter"
+        self.training_table = "tweet_2"
+        self.exceptional_feature = ['clas','id']
 
-print('\n\n\n\n\n\n\n')
-# tf = TfIdf()
-# tf1 = tf.tf(df,'text','clas')
+        self.con = pymysql.connect(host='localhost', user='root', passwd='', database=db,charset='utf8')
+        self.p = Preprocessing()
 
-# idf = tf.idf(tf1)
-# nb = NaiveBayes()
-# model = nb.process(idf)
-# testdata = "tol bangun jalan utama sedih"
-# nb.testclassification(model,testdata)
+    def run(self):
+        df = pd.read_sql('SELECT * FROM '+self.training_table+' order by id asc limit 0,9', con=self.con)
 
-# exceptional_feature = ['clas','id']
-# testdata = "tuan yg bangun nyuruh anak aja tau salam periode san"
-# v = Vsm()
-# vsm = v.vsm(df,exceptional_feature)
-# nb = NaiveBayes()
-# model = nb.builtmodel(vsm)
-# nb.testclassification(model,testdata)
+        for index,row in df.iterrows():
+            tweet = row['text']
+            pretext = self.p.process(tweet)
+            # print("Ori : ",tweet)
+            print("Preprocessed : ",pretext," -> ",row['clas'])
+            df.at[index,'text'] = pretext
+
+        print('\n\n\n\n\n\n\n')
+
+        testdata = "Dikejar waktu biar bisa buat Pencitraan #prihatin"
+        v = Vsm()
+        vsm = v.vsm(df,exceptional_feature=self.exceptional_feature)
+        nb = NaiveBayes()
+        model = nb.builtmodel(vsm)
+        nb.classify(testdata)
+
+    def testrun(self):
+        db_connection = pymysql.connect(host='localhost', user='root', passwd='', database='dataset_twitter',charset='utf8')
+        df = pd.read_sql('SELECT * FROM tweet_2 order by id asc limit 0,9', con=db_connection)
+        p = Preprocessing()
+
+        for index,row in df.iterrows():
+            tweet = row['text']
+            pretext = p.process(tweet)
+            # print("Ori : ",tweet)
+            print("Preprocessed : ",pretext," -> ",row['clas'])
+            df.at[index,'text'] = pretext
+
+        print('\n\n\n\n\n\n\n')
+
+        exceptional_feature = ['clas','id']
+        testdata = "Dikejar waktu biar bisa buat Pencitraan #prihatin"
+        v = Vsm()
+        vsm = v.vsm(df,exceptional_feature=exceptional_feature)
+        nb = NaiveBayes()
+        model = nb.builtmodel(vsm)
+        nb.classify(testdata)
+
+app = App()
+app.testrun()

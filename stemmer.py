@@ -33,7 +33,10 @@ class ECSP():
 
                 # 3.1. hapus kata ganti kepunyaan yang berada di depan
                 if re.search(r'^(ku|kau)\S{1,}', term):
-                    term = re.sub(r'^(ku|kau)','', term)
+                    if re.search(r'^(ku)[a]\S{4,}', term):
+                        pass
+                    else:
+                        term = re.sub(r'^(ku|kau)','', term)
                     # if self.isSixChar(term):
                     #     return term
                 # 3.2. awalan asing
@@ -60,7 +63,10 @@ class ECSP():
 
                 # 5.1. hapus awalan yang tidak bermofologi
                 if re.search(r'^(di|ke|se)\S{1,}', term):
-                    term = re.sub(r'^(di|ke|se)','', term) #??? distribusi
+                    if re.search(r'^((se)[r]|(kera))\S{1,}', term):
+                        pass
+                    else:
+                        term = re.sub(r'^(di|ke|se)','', term) #??? distribusi
                     if self.isSixChar(term):
                         return term
                     # term = re.sub(r'^ke','', term)#???
@@ -70,7 +76,10 @@ class ECSP():
                     if re.search(r'^(me)(?!ng)\S{1,}', term) and re.search(r'^(me)[^n]\S{1,}', term):
                         term = re.sub(r'^(me)','', term)
                     if re.search(r'^(be|te|pe)[^kmrbl]\S{1,}', term):
-                        term = re.sub(r'^(be|te|pe)','', term) #???
+                        if re.search(r'^(pe)[n]\S{1,}', term):
+                            pass
+                        else:
+                            term = re.sub(r'^(be|te|pe)','', term) #???
                     if self.isSixChar(term):
                         return term
 
@@ -202,13 +211,19 @@ class ECSP():
 
                 # 7. hapus akhiran serapan asing
                 if re.search(r'(wati|wan|isme|is|iah|isasi|er|wi|in|logi)$', term):
-                    term = re.sub(r'(wati|wan|isme|is|iah|isasi|er|wi|in|logi)$','', term)
+                    if re.search(r'^(notaris)$', term):
+                        pass
+                    else:
+                        term = re.sub(r'(wati|wan|isme|is|iah|isasi|er|wi|in|logi)$','', term)
                     if self.isSixChar(term):
                         return term
 
                 # 6. hapus akhiran
                 if re.search(r'(i|kan|an)$', term):
-                    term = re.sub(r'(i|kan|an)$','', term)
+                    if re.search(r'^(pribadi|handai)$', term):
+                        pass
+                    else:
+                        term = re.sub(r'(i|kan|an)$','', term)
                     if self.isSixChar(term):
                         return term
 

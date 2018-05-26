@@ -4,26 +4,6 @@ import time
 from stemmer import ECSP
 
 
-# ░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓░░░░
-# ░░░░░░░░░░░░░░░░░░░░░░░▓▓░▓▓▓░▓░░
-# ░░░░░░░░░░░░░░░░▓░▓░░▓▓▓░▓▓▓░░▓▓░
-# ░░░░░░░░░░░▓▓▓▓▓▓░▓░▓▓▓░░▓▓▓░▓▓▓▓
-# ░░░░░░▓▓▓▓▓▓▓▓▓░░▓▓░▓▓▓░░▓▓▓░▓░▓▓
-# ░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░▓▓▓▓░▓▓▓▓░░░▓▓
-# ░░░▓▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓▓░▓▓▓▓▓░░░▓▓
-# ░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓░░▓▓▓▓░░░▓▓▓
-# ░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓▓░░░▓▓▓░
-# ░░▓▓▓▓░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓░░░▓▓▓░░
-# ░░▓▓░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓▓▓░░░
-# ░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░
-# ░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░
-# ░░░░░░░░░░░░░░░▓▓▓▓▓░░░░░░░░░░░░░
-# ░░░░░░░░░░░▓▓▓▓▓▓░░░░░░░░░░░░░░░░
-# ░░░▓▓░░░▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░
-# ░░▓▓▓░▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░
-# ░▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░
-# ▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░﻿
-
 class Preprocessing():
     def __init__(self,keyword=[]):
         self.stemmer = ECSP()
@@ -38,13 +18,14 @@ class Preprocessing():
         for i in unfixWord:
             self.unfixedWords.append(i[1])
             self.fixedWords.append(i[2])
-        print(self.unfixedWords)
+        # print(self.unfixedWords)
 
     def removesymbol(self,text):
         cleantext = text
         url_pattern = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
         # symbol_pattern = '[\[\]\(\)!@#$%^&*-+=_`~\{\}\\\/;:\'\"<>,.?]'
-        allowonlyletternumber_pattern = "(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"
+        # allowonlyletternumber_pattern = "(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"
+        allowonlyletternumber_pattern = "(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^A-Za-z \t])|(\w+:\/\/\S+)"
         # allowonlyletter_pattern = "([^A-Za-z \t])|(\w+:\/\/\S+)"
         cleantext = ' '.join(re.sub(allowonlyletternumber_pattern," ",cleantext).split())
         cleantext = re.sub(url_pattern,'',cleantext)
@@ -72,7 +53,7 @@ class Preprocessing():
         # ,'tidak'
         cleantext = []
         for text in texts:
-            if text in stopword:
+            if text in stopword or len(text) < 2:
                 pass
             else:
                 cleantext.append(text)
@@ -141,10 +122,10 @@ class Preprocessing():
         # 5 Feature selection & TF-IDF
 
         result = stemmed_text
-        print("--- %s seconds ---" % (time.time() - start_time))
+        # print("--- %s seconds ---" % (time.time() - start_time))
         return result
 
 
-t = "sy suka dengan dia, namun dia tidak suka dengan saya dan dia, sangat mendebarkan @jokowi 2 periode"
-p = Preprocessing()
-print(p.process(t))
+# t = "sy suka dengan dia, namun dia tidak suka dengan saya dan dia, sangat mendebarkan @jokowi 2 periode"
+# p = Preprocessing()
+# print(p.process(t))
