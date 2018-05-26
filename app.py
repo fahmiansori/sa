@@ -3,6 +3,7 @@ import pandas as pd
 from preprocessing import Preprocessing
 from classificator import NaiveBayes
 from classificator import Vsm
+from feature_selection import InfoGain
 
 class App():
     def __init__(self):
@@ -12,6 +13,7 @@ class App():
 
         self.con = pymysql.connect(host='localhost', user='root', passwd='', database=db,charset='utf8')
         self.p = Preprocessing()
+        self.feature_selection = InfoGain()
 
     def run(self):
         df = pd.read_sql('SELECT * FROM '+self.training_table+' order by id asc limit 0,9', con=self.con)
@@ -31,6 +33,23 @@ class App():
         nb = NaiveBayes()
         model = nb.builtmodel(vsm)
         nb.classify(testdata)
+
+    def run2(self):
+        df = pd.read_sql('SELECT * FROM '+self.training_table+' order by id asc limit 0,9', con=self.con)
+
+        for index,row in df.iterrows():
+            tweet = row['text']
+            pretext = self.p.process(tweet)
+            # print("Ori : ",tweet)
+            # print("Preprocessed : ",pretext," -> ",row['clas'])
+            df.at[index,'text'] = pretext
+
+        print('\n\n\n\n\n\n\n')
+
+        # testdata = "Dikejar waktu biar bisa buat Pencitraan #prihatin"
+        v = Vsm()
+        vsm = v.vsm(df,exceptional_feature=self.exceptional_feature)
+        self.feature_selection.run(vsm,self.exceptional_feature)
 
     def testrun(self):
         db_connection = pymysql.connect(host='localhost', user='root', passwd='', database='dataset_twitter',charset='utf8')
@@ -55,4 +74,4 @@ class App():
         nb.classify(testdata)
 
 app = App()
-app.testrun()
+app.run2()

@@ -35,7 +35,9 @@ class NaiveBayes():
         columnlen = data['columnlen']
         totaldata = len(df2.index)
         totalclass = df2[colclas].value_counts()
-        clas = df2.clas.unique()
+        # clas = df2.clas.unique() #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>perlu perbaikan, jadikan dinamis
+        clas = getattr(df2,colclas)
+        clas = clas.unique()
         nulval = df2[colclas].isnull().sum()
 
         if totalclass.empty or nulval > 0:
@@ -214,7 +216,8 @@ class Vsm():
                     if t == col:
                         newdata[col]+=1
             df2 = df2.append(newdata,ignore_index=True)
-        # print(df2.head())
+        print(df2.head())
+        # df2.to_csv('file.csv') #del first column (that is index data from dataframe)
 
         vs_model = {'vsm':df2,'column':column,'columnlen':columnlen}
         return vs_model
