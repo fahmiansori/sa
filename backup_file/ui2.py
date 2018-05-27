@@ -8,24 +8,11 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app import App
-import re
 
 class Ui_MainWindow(object):
     def __init__(self):
         self.app = App()
-
-        # tab setup
         self.selectedTable = ""
-        self.setupTextCol = "text"
-        self.setupClassCol = "clas"
-        self.exceptCol = []
-
-        # tab fix word
-        # self.fixWord_db = "sentiment_analysis"
-        self.fixWord_cols = ['id','word','word_fix']
-        self.fixWord_fixtable = "fix_word"
-        self.fixWord_indexData = None
-        self.fixWord_idData = 0
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -146,11 +133,9 @@ class Ui_MainWindow(object):
         self.gridLayout_7.setObjectName("gridLayout_7")
         self.gridLayout_10 = QtWidgets.QGridLayout()
         self.gridLayout_10.setObjectName("gridLayout_10")
-        self.tableWidget_fixword = QtWidgets.QTableWidget(self.tab_fix_word)
-        self.tableWidget_fixword.setObjectName("tableWidget_fixword")
-        self.tableWidget_fixword.setColumnCount(0)
-        self.tableWidget_fixword.setRowCount(0)
-        self.gridLayout_10.addWidget(self.tableWidget_fixword, 0, 0, 1, 1)
+        self.tableView_fixword = QtWidgets.QTableView(self.tab_fix_word)
+        self.tableView_fixword.setObjectName("tableView_fixword")
+        self.gridLayout_10.addWidget(self.tableView_fixword, 0, 0, 1, 1)
         self.gridLayout_7.addLayout(self.gridLayout_10, 0, 2, 4, 3)
         self.pushButton_fixword_next = QtWidgets.QPushButton(self.tab_fix_word)
         self.pushButton_fixword_next.setObjectName("pushButton_fixword_next")
@@ -506,7 +491,7 @@ class Ui_MainWindow(object):
         self.label_4.setText(_translate("MainWindow", "Database"))
         self.lineEdit_setup_db.setToolTip(_translate("MainWindow", "<html><head/><body><p>Database to use</p></body></html>"))
         self.lineEdit_setup_db.setPlaceholderText(_translate("MainWindow", "eg : training_db"))
-        self.label_5.setText(_translate("MainWindow", "Table for training data"))
+        self.label_5.setText(_translate("MainWindow", "Table"))
         self.label_3.setText(_translate("MainWindow", "Password"))
         self.lineEdit_setup_password.setToolTip(_translate("MainWindow", "<html><head/><body><p>User password</p></body></html>"))
         self.lineEdit_setup_password.setPlaceholderText(_translate("MainWindow", "password"))
@@ -591,18 +576,9 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_analysis), _translate("MainWindow", "Analysis"))
 
     def connectAction(self):
-        # tab setup
         self.pushButton_setup_connect.clicked.connect(lambda: self.buttonConnectDb())
-        self.comboBox_setup_table.currentTextChanged.connect(self.tableTrainingCheck)
-        self.lineEdit_setup_text_col.keyReleaseEvent = self.setupHandleKeyReleaseText
-        self.lineEdit_setup_clas_col.keyReleaseEvent = self.setupHandleKeyReleaseClass
-        self.lineEdit_setup_except_col.keyReleaseEvent = self.setupHandleKeyReleaseEx
         self.pushButton_setup_next.clicked.connect(lambda: self.setupNext())
 
-        # tab fixword
-        self.pushButton_fixword_save.clicked.connect(self.fixWordSave)
-
-# tab setup
     def buttonConnectDb(self):
         host = self.lineEdit_setup_host.text()
         user = self.lineEdit_setup_user.text()
@@ -613,66 +589,10 @@ class Ui_MainWindow(object):
             if connectStatus['tables'] != None:
                 for tb in connectStatus['tables']:
                     self.comboBox_setup_table.addItem(tb[0])
+                self.pushButton_setup_next.setEnabled(True)
         else:
             pass
         self.label_setup_status_connect.setText(connectStatus['msg'])
-
-    def setupCheckTrainingTable(self):
-        if self.app.con != None:
-            if self.setupTextCol == self.setupClassCol:
-                print("Text column cannot be same as class column!")
-                self.pushButton_setup_next.setEnabled(False)
-                self.tabWidget.setTabEnabled(1,False)
-                self.tabWidget.setTabEnabled(2,False)
-            else:
-                query = "SELECT {0},{1} from {2}"
-                testCol = self.app.con.queryWithError(query.format(self.setupTextCol,self.setupClassCol,self.selectedTable))
-                if testCol['errorcode'] == 1054:
-                    print("Table does not contain \'{0}\' or \'{1}\' column, please select another table!".format(self.setupTextCol,self.setupClassCol))
-                    print("Or change column below.")
-                    self.pushButton_setup_next.setEnabled(False)
-                    self.tabWidget.setTabEnabled(1,False)
-                    self.tabWidget.setTabEnabled(2,False)
-                elif testCol['errorcode'] == 0:
-                    self.pushButton_setup_next.setEnabled(True)
-                    print("Column text and class confirmed.")
-                else:
-                    print("Error in check column for table. No {0}".format(testCol['errorcode']))
-                    self.pushButton_setup_next.setEnabled(False)
-                    self.tabWidget.setTabEnabled(1,False)
-                    self.tabWidget.setTabEnabled(2,False)
-
-    def tableTrainingCheck(self,value):
-        self.selectedTable = value
-        self.setupCheckTrainingTable()
-
-    def setupHandleKeyReleaseText(self,event):
-        self.setupTextCol = self.lineEdit_setup_text_col.text()
-        QtWidgets.QLineEdit.keyReleaseEvent(self.lineEdit_setup_text_col,event)
-        self.setupCheckTrainingTable()
-
-    def setupHandleKeyReleaseClass(self,event):
-        self.setupClassCol = self.lineEdit_setup_clas_col.text()
-        QtWidgets.QLineEdit.keyReleaseEvent(self.lineEdit_setup_clas_col,event)
-        self.setupCheckTrainingTable()
-
-    def setupHandleKeyReleaseEx(self,event):
-        exceptCol = self.lineEdit_setup_except_col.text()
-        if re.search(r'^[a-zA-Z0-9,\_]*$',exceptCol):
-            # print("check to db, before it parse to list with comma separator")
-            exceptCol = exceptCol.split(",")
-            self.exceptCol = list(filter(None,exceptCol)) #remove empty string in list
-            if self.setupTextCol in self.exceptCol or self.setupClassCol in self.exceptCol:
-                self.pushButton_setup_next.setEnabled(False)
-                self.tabWidget.setTabEnabled(1,False)
-                self.tabWidget.setTabEnabled(2,False)
-            else:
-                self.pushButton_setup_next.setEnabled(True)
-            # print(self.exceptCol)
-            # print(len(self.exceptCol))
-        else:
-            print("Character contain illegal symbol, only comma (,) allowed!")
-        QtWidgets.QLineEdit.keyReleaseEvent(self.lineEdit_setup_except_col,event)
 
     def setupNext(self):
         self.selectedTable = str(self.comboBox_setup_table.currentText())
@@ -682,82 +602,58 @@ class Ui_MainWindow(object):
             self.tabWidget.setTabEnabled(2,True)
             self.tabWidget.setCurrentIndex(1)
 
-# tab fixword
-    def fixWordTableRefresh(self,lay):
+    def fixWordTableRefresh(self):
         import sip
 
-        lay.removeWidget(self.tableWidget_fixword)
-        sip.delete(self.tableWidget_fixword)
-        self.tableWidget_fixword= None
+        lay.removeWidget(self.tableWidget)
+        sip.delete(self.tableWidget)
+        self.tableWidget= None
 
         colCount = 0
         rowCount = 0
         data = None
 
-        if self.app.con != None:
-            colCount = len(self.fixWord_cols)
+        if self.con != None:
+            print("Connected")
+            # query = "SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema='"+self.d+"' AND table_name='"+self.dbtable+"'"
+            # dataCols = dbI.query(con,query)
+            # self.cols = list()
+            # for i in dataCols:
+            #     self.cols.append(i[0])
+            # print(self.cols)
+
+            colCount = len(self.cols)
             cols_q = ""
             j = 0
-            for i in self.fixWord_cols:
+            for i in self.cols:
                 cols_q+=i
                 j+=1
                 if j < colCount:
                     cols_q+=","
 
-            query = "SELECT {0} FROM {1}"
-            data = self.app.con.query(query.format(cols_q,self.fixWord_fixtable))
+            query = "SELECT "+cols_q+" FROM "+self.dbtable
+            data = self.dbI.query(query)
             rowCount = len(data)
 
-        self.tableWidget_fixword = QtWidgets.QTableWidget(rowCount, colCount)
-        self.tableWidget_fixword.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.tableWidget_fixword.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.tableWidget = QtWidgets.QTableWidget(rowCount, colCount)
+        self.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
         vheader = QtWidgets.QHeaderView(QtCore.Qt.Vertical)
         vheader.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.tableWidget_fixword.setVerticalHeader(vheader)
+        self.tableWidget.setVerticalHeader(vheader)
         hheader = QtWidgets.QHeaderView(QtCore.Qt.Horizontal)
         hheader.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.tableWidget_fixword.setHorizontalHeader(hheader)
-        self.tableWidget_fixword.setHorizontalHeaderLabels(self.fixWord_cols)
+        self.tableWidget.setHorizontalHeader(hheader)
+        self.tableWidget.setHorizontalHeaderLabels(self.cols)
 
         if data != None:
             for i in range(rowCount):
                 for j in range(colCount):
-                    if data[i][j]:
-                        itemText = str(data[i][j])
-                    else:
-                        itemText = ""
-                    item = QtWidgets.QTableWidgetItem(itemText)
-                    self.tableWidget_fixword.setItem(i, j, item)
-        self.tableWidget_fixword.doubleClicked.connect(lambda: self.fixWordgetItem(cols_q))
-        lay.addWidget(self.tableWidget_fixword)
-
-    def fixWordgetItem(self,cols_q):
-
-        self.fixWord_indexData = self.tableWidget_fixword.currentRow()
-        self.fixWord_idData = self.tableWidget_fixword.item(self.fixWord_indexData,0).text()
-
-        query = "SELECT {0} FROM {1} where id={2}"
-        data = self.app.con.query(query.format(cols_q,self.fixWord_fixtable,self.fixWord_idData))
-
-        self.lineEdit_fixword_word.setText(data[0][1])
-        self.lineEdit_fixword_wordfix.setText(data[0][2])
-
-    def fixWordSave(self):
-        if self.fixWord_idData == 0:
-            print("No data selected!")
-        elif not self.lineEdit_fixword_wordfix.text():
-            print("Empty!")
-        else:
-            print("Saving ...")
-            newText = self.lineEdit_fixword_wordfix.text()
-            query = "UPDATE {0} set word_fix='{1}' where id={2}"
-            self.app.con.queryInsert(query.format(self.fixWord_fixtable,newText,self.fixWord_idData))
-            self.tableWidget_fixword.item(self.fixWord_indexData,2).setText(newText)
-            self.lineEdit_fixword_word.setText("")
-            self.lineEdit_fixword_wordfix.setText("")
-            self.fixWord_idData = 0
-            print("Saved")
+                    item = QtWidgets.QTableWidgetItem(str(data[i][j]))
+                    self.tableWidget.setItem(i, j, item)
+        self.tableWidget.doubleClicked.connect(lambda: self.getItem(cols_q))
+        lay.addWidget(self.tableWidget)
 
 
 if __name__ == "__main__":

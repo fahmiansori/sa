@@ -21,7 +21,7 @@
        <string/>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_setup">
        <attribute name="title">
@@ -327,7 +327,7 @@
         <item row="0" column="2" rowspan="4" colspan="3">
          <layout class="QGridLayout" name="gridLayout_10">
           <item row="0" column="0">
-           <widget class="QTableView" name="tableView_fixword"/>
+           <widget class="QTableWidget" name="tableWidget_fixword"/>
           </item>
          </layout>
         </item>

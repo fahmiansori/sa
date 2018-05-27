@@ -56,3 +56,47 @@ class Database():
             print('Got error {!r}, errno is {}'.format(e, e.args[0]))
 
         return tables
+
+    def query(self,query):
+        rows = None
+        if self.con != None:
+            cursor = self.con.cursor()
+            rows = None
+            try:
+                cursor.execute(query)
+                rows = cursor.fetchall()
+            except pymysql.MySQLError as e:
+                # print("Error retrieving tables")
+                print('Got error {!r}, errno is {}'.format(e, e.args[0]))
+
+        return rows
+
+    def queryWithError(self,query):
+        rows = None
+        errorcode = 0
+        if self.con != None:
+            cursor = self.con.cursor()
+            rows = None
+            try:
+                cursor.execute(query)
+                rows = cursor.fetchall()
+            except pymysql.MySQLError as e:
+                # print("Error retrieving tables")
+                errorcode = e.args[0]
+                # print('Got error {!r}, errno is {}'.format(e, e.args[0]))
+
+        ret = {}
+        ret['rows'] = rows
+        ret['errorcode'] = errorcode
+        return ret
+
+    def queryInsert(self,query):
+        if self.con != None:
+            cursor = self.con.cursor()
+            try:
+                cursor.execute(query)
+                self.con.commit()
+                # con.close()
+            except pymysql.MySQLError as e:
+                print("Error retrieving tables")
+                print('Got error {!r}, errno is {}'.format(e, e.args[0]))

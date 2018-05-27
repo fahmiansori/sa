@@ -35,6 +35,14 @@ class App():
             return True
         return False
 
+    def connectTo(self,host,user,password,db): # connect to different db
+        tryConnect = Database()
+        tryConnectStat = tryConnect.connect(host,user,password,db)
+        if tryConnectStat['success'] == True:
+            return tryConnect
+
+        return None
+
     def connectDb(self,host,user,password,db):
         tables = None
         tryConnect = Database()
