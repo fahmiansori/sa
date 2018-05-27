@@ -10,19 +10,23 @@ class App():
         db = "dataset_twitter"
         self.training_table = "tweet_2"
         self.exceptional_feature = ['clas','id']
+        self.class_col = 'clas'
+        self.text_col = 'text'
 
         self.con = pymysql.connect(host='localhost', user='root', passwd='', database=db,charset='utf8')
+        # check point > tambah exception handling waktu connect db dan query
         self.p = Preprocessing()
         self.feature_selection = InfoGain()
 
     def run(self):
         df = pd.read_sql('SELECT * FROM '+self.training_table+' order by id asc limit 0,9', con=self.con)
+        # df = pd.read_sql('SELECT * FROM '+self.training_table+' order by id asc', con=self.con) # activate if deploying
 
         for index,row in df.iterrows():
-            tweet = row['text']
+            tweet = row[self.text_col]
             pretext = self.p.process(tweet)
             # print("Ori : ",tweet)
-            print("Preprocessed : ",pretext," -> ",row['clas'])
+            print("Preprocessed : ",pretext," -> ",row[self.class_col])
             df.at[index,'text'] = pretext
 
         print('\n\n\n\n\n\n\n')
