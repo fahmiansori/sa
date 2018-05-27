@@ -21,7 +21,7 @@
        <string/>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab_setup">
        <attribute name="title">
@@ -598,20 +598,6 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1" colspan="3">
-            <widget class="QRadioButton" name="radioButton_preprocessing_featureselection_ig">
-             <property name="text">
-              <string>Feature selection (Information Gain)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1" colspan="3">
-            <widget class="QRadioButton" name="radioButton_preprocessing_nofeatureselection">
-             <property name="text">
-              <string>No feature selection</string>
-             </property>
-            </widget>
-           </item>
            <item row="4" column="3" colspan="2">
             <widget class="QPushButton" name="pushButton_preprocessing_process">
              <property name="text">
@@ -651,6 +637,66 @@
               <number>0</number>
              </property>
             </widget>
+           </item>
+           <item row="0" column="2">
+            <layout class="QGridLayout" name="gridLayout_20">
+             <item row="0" column="0">
+              <widget class="QRadioButton" name="radioButton_preprocessing_nofeatureselection">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;No feature selection process.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>No feature selection</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroup_2</string>
+               </attribute>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QRadioButton" name="radioButton_preprocessing_featureselection_ig">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Perform a feature selection.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Feature selection (Information Gain)</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroup_2</string>
+               </attribute>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="0" column="1">
+            <layout class="QGridLayout" name="gridLayout_19">
+             <item row="0" column="0">
+              <widget class="QRadioButton" name="radioButton_preprocessing_nopreprocessing">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will only remove symbol and lower case the text.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>No preprocessing</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroup</string>
+               </attribute>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QRadioButton" name="radioButton_preprocessing_withpreprocessing">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove symbols, case folding, remove stopword, and do stemming.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Preprocessing</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroup</string>
+               </attribute>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -1126,4 +1172,8 @@
  </widget>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
+ </buttongroups>
 </ui>

@@ -245,6 +245,12 @@ class Ui_MainWindow(object):
         self.lineEdit_preprocessing_numberoffeature = QtWidgets.QLineEdit(self.groupBox_3)
         self.lineEdit_preprocessing_numberoffeature.setObjectName("lineEdit_preprocessing_numberoffeature")
         self.gridLayout_12.addWidget(self.lineEdit_preprocessing_numberoffeature, 2, 2, 1, 2)
+        self.radioButton_preprocessing_featureselection_ig = QtWidgets.QRadioButton(self.groupBox_3)
+        self.radioButton_preprocessing_featureselection_ig.setObjectName("radioButton_preprocessing_featureselection_ig")
+        self.gridLayout_12.addWidget(self.radioButton_preprocessing_featureselection_ig, 1, 1, 1, 3)
+        self.radioButton_preprocessing_nofeatureselection = QtWidgets.QRadioButton(self.groupBox_3)
+        self.radioButton_preprocessing_nofeatureselection.setObjectName("radioButton_preprocessing_nofeatureselection")
+        self.gridLayout_12.addWidget(self.radioButton_preprocessing_nofeatureselection, 0, 1, 1, 3)
         self.pushButton_preprocessing_process = QtWidgets.QPushButton(self.groupBox_3)
         self.pushButton_preprocessing_process.setObjectName("pushButton_preprocessing_process")
         self.gridLayout_12.addWidget(self.pushButton_preprocessing_process, 4, 3, 1, 2)
@@ -256,32 +262,6 @@ class Ui_MainWindow(object):
         self.progressBar_preprocessing.setProperty("value", 0)
         self.progressBar_preprocessing.setObjectName("progressBar_preprocessing")
         self.gridLayout_12.addWidget(self.progressBar_preprocessing, 5, 2, 1, 4)
-        self.gridLayout_20 = QtWidgets.QGridLayout()
-        self.gridLayout_20.setObjectName("gridLayout_20")
-        self.radioButton_preprocessing_nofeatureselection = QtWidgets.QRadioButton(self.groupBox_3)
-        self.radioButton_preprocessing_nofeatureselection.setObjectName("radioButton_preprocessing_nofeatureselection")
-        self.buttonGroup_2 = QtWidgets.QButtonGroup(MainWindow)
-        self.buttonGroup_2.setObjectName("buttonGroup_2")
-        self.buttonGroup_2.addButton(self.radioButton_preprocessing_nofeatureselection)
-        self.gridLayout_20.addWidget(self.radioButton_preprocessing_nofeatureselection, 0, 0, 1, 1)
-        self.radioButton_preprocessing_featureselection_ig = QtWidgets.QRadioButton(self.groupBox_3)
-        self.radioButton_preprocessing_featureselection_ig.setObjectName("radioButton_preprocessing_featureselection_ig")
-        self.buttonGroup_2.addButton(self.radioButton_preprocessing_featureselection_ig)
-        self.gridLayout_20.addWidget(self.radioButton_preprocessing_featureselection_ig, 1, 0, 1, 1)
-        self.gridLayout_12.addLayout(self.gridLayout_20, 0, 2, 1, 1)
-        self.gridLayout_19 = QtWidgets.QGridLayout()
-        self.gridLayout_19.setObjectName("gridLayout_19")
-        self.radioButton_preprocessing_nopreprocessing = QtWidgets.QRadioButton(self.groupBox_3)
-        self.radioButton_preprocessing_nopreprocessing.setObjectName("radioButton_preprocessing_nopreprocessing")
-        self.buttonGroup = QtWidgets.QButtonGroup(MainWindow)
-        self.buttonGroup.setObjectName("buttonGroup")
-        self.buttonGroup.addButton(self.radioButton_preprocessing_nopreprocessing)
-        self.gridLayout_19.addWidget(self.radioButton_preprocessing_nopreprocessing, 0, 0, 1, 1)
-        self.radioButton_preprocessing_withpreprocessing = QtWidgets.QRadioButton(self.groupBox_3)
-        self.radioButton_preprocessing_withpreprocessing.setObjectName("radioButton_preprocessing_withpreprocessing")
-        self.buttonGroup.addButton(self.radioButton_preprocessing_withpreprocessing)
-        self.gridLayout_19.addWidget(self.radioButton_preprocessing_withpreprocessing, 1, 0, 1, 1)
-        self.gridLayout_12.addLayout(self.gridLayout_19, 0, 1, 1, 1)
         self.gridLayout_11.addWidget(self.groupBox_3, 0, 0, 1, 3)
         self.pushButton_preprocessing_back = QtWidgets.QPushButton(self.tab_preprocessing)
         self.pushButton_preprocessing_back.setObjectName("pushButton_preprocessing_back")
@@ -469,6 +449,32 @@ class Ui_MainWindow(object):
 
         self.connectAction()
 
+    def connectAction(self):
+        self.pushButton_setup_connect.clicked.connect(lambda: self.buttonConnectDb())
+        self.pushButton_setup_next.clicked.connect(lambda: self.setupNext())
+
+    def setupNext(self):
+        self.selectedTable = str(self.comboBox_setup_table.currentText())
+        if self.selectedTable:
+            self.tabWidget.setTabEnabled(1,True)
+            self.tabWidget.setTabEnabled(2,True)
+            self.tabWidget.setCurrentIndex(1)
+
+    def buttonConnectDb(self):
+        host = self.lineEdit_setup_host.text()
+        user = self.lineEdit_setup_user.text()
+        password = self.lineEdit_setup_password.text()
+        db = self.lineEdit_setup_db.text()
+        connectStatus = self.app.connectDb(host,user,password,db)
+        if connectStatus['success'] == True:
+            if connectStatus['tables'] != None:
+                for tb in connectStatus['tables']:
+                    self.comboBox_setup_table.addItem(tb[0])
+                self.pushButton_setup_next.setEnabled(True)
+        else:
+            pass
+        self.label_setup_status_connect.setText(connectStatus['msg'])
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -528,15 +534,9 @@ class Ui_MainWindow(object):
         self.lineEdit_preprocessing_threshold.setPlaceholderText(_translate("MainWindow", "default : 0. no threshold - all feature selected"))
         self.lineEdit_preprocessing_numberoffeature.setToolTip(_translate("MainWindow", "<html><head/><body><p>Number of feature taken.</p></body></html>"))
         self.lineEdit_preprocessing_numberoffeature.setPlaceholderText(_translate("MainWindow", "default : 0, all feature selected"))
-        self.pushButton_preprocessing_process.setText(_translate("MainWindow", "Process"))
-        self.radioButton_preprocessing_nofeatureselection.setToolTip(_translate("MainWindow", "<html><head/><body><p>No feature selection process.</p></body></html>"))
-        self.radioButton_preprocessing_nofeatureselection.setText(_translate("MainWindow", "No feature selection"))
-        self.radioButton_preprocessing_featureselection_ig.setToolTip(_translate("MainWindow", "<html><head/><body><p>Perform a feature selection.</p></body></html>"))
         self.radioButton_preprocessing_featureselection_ig.setText(_translate("MainWindow", "Feature selection (Information Gain)"))
-        self.radioButton_preprocessing_nopreprocessing.setToolTip(_translate("MainWindow", "<html><head/><body><p>Will only remove symbol and lower case the text.</p></body></html>"))
-        self.radioButton_preprocessing_nopreprocessing.setText(_translate("MainWindow", "No preprocessing"))
-        self.radioButton_preprocessing_withpreprocessing.setToolTip(_translate("MainWindow", "<html><head/><body><p>Remove symbols, case folding, remove stopword, and do stemming.</p><p><br/></p></body></html>"))
-        self.radioButton_preprocessing_withpreprocessing.setText(_translate("MainWindow", "Preprocessing"))
+        self.radioButton_preprocessing_nofeatureselection.setText(_translate("MainWindow", "No feature selection"))
+        self.pushButton_preprocessing_process.setText(_translate("MainWindow", "Process"))
         self.pushButton_preprocessing_back.setText(_translate("MainWindow", "Back"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_preprocessing), _translate("MainWindow", "Preprocessing"))
         self.pushButton_training_back.setText(_translate("MainWindow", "Back"))
@@ -572,33 +572,6 @@ class Ui_MainWindow(object):
         self.label_training_recall.setText(_translate("MainWindow", "0"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_training), _translate("MainWindow", "Training"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_analysis), _translate("MainWindow", "Analysis"))
-
-    def connectAction(self):
-        self.pushButton_setup_connect.clicked.connect(lambda: self.buttonConnectDb())
-        self.pushButton_setup_next.clicked.connect(lambda: self.setupNext())
-
-    def setupNext(self):
-        self.selectedTable = str(self.comboBox_setup_table.currentText())
-        if self.selectedTable:
-            self.tabWidget.setTabEnabled(1,True)
-            self.tabWidget.setTabEnabled(2,True)
-            self.tabWidget.setCurrentIndex(1)
-
-    def buttonConnectDb(self):
-        host = self.lineEdit_setup_host.text()
-        user = self.lineEdit_setup_user.text()
-        password = self.lineEdit_setup_password.text()
-        db = self.lineEdit_setup_db.text()
-        connectStatus = self.app.connectDb(host,user,password,db)
-        if connectStatus['success'] == True:
-            if connectStatus['tables'] != None:
-                for tb in connectStatus['tables']:
-                    self.comboBox_setup_table.addItem(tb[0])
-                self.pushButton_setup_next.setEnabled(True)
-        else:
-            pass
-        self.label_setup_status_connect.setText(connectStatus['msg'])
-
 
 
 if __name__ == "__main__":

@@ -4,19 +4,53 @@ from preprocessing import Preprocessing
 from classificator import NaiveBayes
 from classificator import Vsm
 from feature_selection import InfoGain
+from db import Database
 
 class App():
     def __init__(self):
-        db = "dataset_twitter"
-        self.training_table = "tweet_2"
-        self.exceptional_feature = ['clas','id']
+        # db = "dataset_twitter"
+        # self.training_table = "tweet_2"
+        # self.exceptional_feature = ['clas','id']
+        # self.class_col = 'clas'
+        # self.text_col = 'text'
+        #
+        # self.con = pymysql.connect(host='localhost', user='root', passwd='', database=db,charset='utf8')
+        # # check point > tambah exception handling waktu connect db dan query
+        # self.p = Preprocessing()
+        # self.feature_selection = InfoGain()
+        # cursor.execute("select ffrom aldas where dsalkd='{0}'".format(iniwhere))
+
+        self.db = ""
+        self.training_table = ""
+        self.exceptional_feature = []
         self.class_col = 'clas'
         self.text_col = 'text'
 
-        self.con = pymysql.connect(host='localhost', user='root', passwd='', database=db,charset='utf8')
-        # check point > tambah exception handling waktu connect db dan query
-        self.p = Preprocessing()
-        self.feature_selection = InfoGain()
+        self.con = None
+        self.preprocessing = None
+        self.feature_selection = None
+
+    def checkConnection(self):
+        if self.con != None:
+            return True
+        return False
+
+    def connectDb(self,host,user,password,db):
+        tables = None
+        tryConnect = Database()
+        tryConnectStat = tryConnect.connect(host,user,password,db)
+        if tryConnectStat['success'] == True:
+            self.con = tryConnect
+            tables = self.con.tables(db)
+        else:
+            self.con = None
+
+        ret = {}
+
+        ret['success'] = tryConnectStat['success']
+        ret['msg'] = tryConnectStat['msg']
+        ret['tables'] = tables
+        return ret
 
     def run(self):
         df = pd.read_sql('SELECT * FROM '+self.training_table+' order by id asc limit 0,9', con=self.con)
@@ -79,5 +113,5 @@ class App():
         model = nb.builtmodel(vsm)
         nb.classify(testdata)
 
-app = App()
-app.run()
+# app = App()
+# app.run()
