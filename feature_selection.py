@@ -102,7 +102,7 @@ class InfoGain():
             featureDf = pd.DataFrame(columns=['feature','ig'])
             text_t = {}
             for i in so:
-                if igSubset[i] > threshold and num <= take_feature or take_feature == 0:
+                if igSubset[i] > threshold and num <= take_feature or take_feature == 0 and threshold == 0 or take_feature == 0 and igSubset[i] > threshold or num <= take_feature and threshold == 0:
                     column.append(i)
                     text_t['feature'] = i
                     text_t['ig'] = igSubset[i]

@@ -488,7 +488,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Sentiment Analysis"))
         self.pushButton_setup_next.setText(_translate("MainWindow", "Next"))
         self.groupBox_2.setTitle(_translate("MainWindow", "Additional"))
         self.lineEdit_setup_except_col.setToolTip(_translate("MainWindow", "<html><head/><body><p>Column that not neccesary for process, eg : id column.</p></body></html>"))
@@ -830,25 +830,18 @@ class Ui_MainWindow(object):
             self.lineEdit_preprocessing_threshold.setEnabled(True)
 
     def preprocessProcess(self):
-        print(self.preprocessing_doPreprocessing)
-        print(self.preprocessing_doFeatureSelection)
-
         if self.preprocessing_doFeatureSelection:
             if self.lineEdit_preprocessing_numberoffeature.text():
                 self.preprocessing_numFeatureToRetain = self.lineEdit_preprocessing_numberoffeature.text()
+            else:
+                self.preprocessing_numFeatureToRetain = 0
+
             if self.lineEdit_preprocessing_threshold.text():
                 self.preprocessing_thresholdFeatureIgnore = self.lineEdit_preprocessing_threshold.text()
-
+            else:
+                self.preprocessing_thresholdFeatureIgnore = 0
 
         features = self.app.preprocessing(self.preprocessing_doPreprocessing,self.preprocessing_doFeatureSelection,self.preprocessing_numFeatureToRetain,self.preprocessing_thresholdFeatureIgnore)
-
-        # CHECK POINT > kurang hitung dibawah ini dan tampilkan di window
-        totalFeatureBefore = 0
-        totalFeatureAfter = 0
-        reduction = 0
-        if totalFeatureBefore != 0:
-            reduction = totalFeatureAfter/totalFeatureBefore*100
-
         self.preprocessTable(self.gridLayout_13,features)
 
     def preprocessTable(self,lay,features):
@@ -873,8 +866,8 @@ class Ui_MainWindow(object):
         vms_cols = []
 
         if features != None:
-            feature = features['feature']
-            vsm = features['vsm']
+            feature = features['vsm']['feature']
+            vsm = features['vsm']['vsm']
 
             cols = [i for i in feature]
             colCount = len(cols)
@@ -883,6 +876,17 @@ class Ui_MainWindow(object):
             vms_cols = [i for i in vsm]
             vms_colCount = len(vms_cols)
             vms_rowCount = len(vsm.index)
+
+            # CHECK POINT > kurang hitung dibawah ini dan tampilkan di window
+            totalFeatureBefore = features['featurebefore']
+            totalFeatureAfter = rowCount
+            reduction = 0
+            if totalFeatureBefore != 0:
+                reduction = totalFeatureAfter/totalFeatureBefore*100 # rumus masih salah
+                reduction = round(100-reduction) # rumus masih salah
+            self.label_preprocessing_feature_before.setText(str(totalFeatureBefore))
+            self.label_preprocessing_feature_after.setText(str(totalFeatureAfter))
+            self.label_preprocessing_feature_reduction.setText(str(reduction))
 
 
         #for table feature
@@ -915,8 +919,8 @@ class Ui_MainWindow(object):
 
 
         if features != None:
-            feature = features['feature']
-            vsm = features['vsm']
+            feature = features['vsm']['feature']
+            vsm = features['vsm']['vsm']
 
             for index,row in feature.iterrows():
                 jj = 0

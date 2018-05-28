@@ -76,23 +76,31 @@ class App():
                 dataTraining = self.con.getDataAsDF(self.training_table)
                 if dataTraining is not None:
                     p = Preprocessing()
+                    uniqFeature = []
+                    features = {}
+                    originalFeatureCount = 0
                     for index,row in dataTraining.iterrows():
                         text = row[self.text_col]
+                        t = p.processNoPre(text).split(" ") # bad performance
+                        uniqFeature.extend(t) # bad performance
+
                         if doPreprocessing:
                             pretext = p.process(text)
                         else:
                             pretext = p.processNoPre(text)
                         # print("Ori : ",text)
-                        print("Preprocessed : ",pretext," -> ",row[self.class_col])
+                        # print("Preprocessed : ",pretext," -> ",row[self.class_col])
                         dataTraining.at[index,self.text_col] = pretext
+                    uniqFeature = set(uniqFeature) # bad performance
 
                     v = Vsm()
                     vsm = v.vsm(dataTraining,exceptional_feature=self.exceptional_feature,coltext=self.text_col,colclass=self.class_col)
+                    features['featurebefore'] = len(uniqFeature) # bad performance
 
                     if doFeatureSelection:
                         f = InfoGain()
                         vsm = f.run(vsm,take_feature=take_feature,threshold=threshold,exceptional_feature=self.exceptional_feature,colclas=self.class_col)
-                    features = vsm
+                    features['vsm'] = vsm
 
             else:
                 print("No training table!")
