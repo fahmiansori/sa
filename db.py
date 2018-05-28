@@ -100,3 +100,9 @@ class Database():
             except pymysql.MySQLError as e:
                 print("Error retrieving tables")
                 print('Got error {!r}, errno is {}'.format(e, e.args[0]))
+
+    def getDataAsDF(self,table,col='*',cond=''):
+        if self.con != None:
+            query = "SELECT {0} from {1} {2}"
+            return pd.read_sql(query.format(col,table,cond), con=self.con)
+        return None

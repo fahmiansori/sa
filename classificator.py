@@ -187,16 +187,22 @@ class NaiveBayes():
         return True
 
 class Vsm():
-    def vsm(self,data,exceptional_feature=[],coltext='text'):
+    def vsm(self,data,exceptional_feature=[],coltext='text',colclass='clas'):
         df = data
         list_feature = []
         for index,row in df.iterrows():
-            tweet_token = row[coltext].split(" ")
-            list_feature.extend(tweet_token)
+            text_token = row[coltext].split(" ")
+            list_feature.extend(text_token)
 
         uniq_feature = set(list_feature)
         uniq_feature = list(uniq_feature)
         column = uniq_feature[:]
+        featureDf = pd.DataFrame(columns=['feature'])
+        text_t = {}
+        for i in column:
+            text_t['feature'] = i
+            featureDf = featureDf.append(text_t,ignore_index=True)
+
         columnlen = len(column)
         for i in exceptional_feature:
             uniq_feature.append(i)
@@ -215,10 +221,11 @@ class Vsm():
                         newdata[col]=0
                     if t == col:
                         newdata[col]+=1
+            newdata[colclass] = row[colclass]
             df2 = df2.append(newdata,ignore_index=True)
         # print(df2.head())
         # df2.to_csv('file.csv') #del first column (that is index data from dataframe)
 
-        vs_model = {'vsm':df2,'column':column,'columnlen':columnlen}
+        vs_model = {'vsm':df2,'column':column,'columnlen':columnlen,'feature':featureDf}
 
         return vs_model

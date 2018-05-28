@@ -48,8 +48,10 @@ class InfoGain():
         #     print(i,":",igSubset[i])
         return igSubset
 
-    def run(self,data,threshold=-0.1,take_feature=0,exceptional_feature=[],colclas='clas'):
+    def run(self,data,take_feature=0,threshold=0,exceptional_feature=[],colclas='clas'):
         cols = []
+        take_feature=int(take_feature)
+        threshold=float(threshold)
         dataframe = data['vsm']
         columns = data['column']
         totalclass = dataframe[colclas].value_counts()
@@ -97,9 +99,14 @@ class InfoGain():
             num = 1
             feature_to_delete = []
             column = []
+            featureDf = pd.DataFrame(columns=['feature','ig'])
+            text_t = {}
             for i in so:
                 if igSubset[i] > threshold and num <= take_feature or take_feature == 0:
                     column.append(i)
+                    text_t['feature'] = i
+                    text_t['ig'] = igSubset[i]
+                    featureDf = featureDf.append(text_t,ignore_index=True)
                     # print(num,".",i,":",igSubset[i])
                 else:
                     feature_to_delete.append(i)
@@ -109,7 +116,7 @@ class InfoGain():
                 for i in feature_to_delete:
                     dataframe.drop(i,axis=1,inplace=True) # axis = 1->kolom,0->rows,inplace=True->no asignment
 
-            vs_model = {'vsm':dataframe,'column':column,'columnlen':columnlen}
+            vs_model = {'vsm':dataframe,'column':column,'columnlen':columnlen,'feature':featureDf}
             return vs_model
 
         return False

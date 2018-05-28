@@ -6,6 +6,8 @@
 #
 # WARNING! All changes made in this file will be lost!
 
+# WARNING: check point > tab word fix, next and back button to finish
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app import App
 import re
@@ -26,6 +28,12 @@ class Ui_MainWindow(object):
         self.fixWord_fixtable = "fix_word"
         self.fixWord_indexData = None
         self.fixWord_idData = 0
+
+        # tab preprocessing
+        self.preprocessing_doPreprocessing = True
+        self.preprocessing_doFeatureSelection = False
+        self.preprocessing_numFeatureToRetain = 0
+        self.preprocessing_thresholdFeatureIgnore = 0
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -471,19 +479,11 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
-        self.tabWidget.setTabEnabled(1,False)
-        self.tabWidget.setTabEnabled(2,False)
-        self.tabWidget.setTabEnabled(3,False)
-        self.tabWidget.setTabEnabled(4,False)
-        self.pushButton_setup_next.setEnabled(False)
-        self.pushButton_preprocessing_next.setEnabled(False)
-        self.radioButton_preprocessing_withpreprocessing.setChecked(True)
-        self.radioButton_preprocessing_nofeatureselection.setChecked(True)
-
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.setupDefault()
         self.connectAction()
 
     def retranslateUi(self, MainWindow):
@@ -590,8 +590,29 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_training), _translate("MainWindow", "Training"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_analysis), _translate("MainWindow", "Analysis"))
 
+    def setupDefault(self):
+        self.tabWidget.setTabEnabled(1,False)
+        self.tabWidget.setTabEnabled(2,False)
+        self.tabWidget.setTabEnabled(3,False)
+        self.tabWidget.setTabEnabled(4,False)
+        # tab setup
+        self.pushButton_setup_next.setEnabled(False)
+        self.pushButton_preprocessing_next.setEnabled(False)
+        # tab preprocessing
+        self.radioButton_preprocessing_withpreprocessing.setChecked(True)
+        self.radioButton_preprocessing_nofeatureselection.setChecked(True)
+        self.lineEdit_preprocessing_numberoffeature.setEnabled(False)
+        self.lineEdit_preprocessing_threshold.setEnabled(False)
+
     def connectAction(self):
         # tab setup
+        regexLetterUnderscoreOnly = QtCore.QRegExp(r'^[a-zA-Z0-9\_]*$')
+        validator1 = QtGui.QRegExpValidator(regexLetterUnderscoreOnly,self.lineEdit_setup_host)
+        self.lineEdit_setup_host.setValidator(validator1)
+        validator2 = QtGui.QRegExpValidator(regexLetterUnderscoreOnly,self.lineEdit_setup_user)
+        self.lineEdit_setup_user.setValidator(validator2)
+        validator3 = QtGui.QRegExpValidator(regexLetterUnderscoreOnly,self.lineEdit_setup_db)
+        self.lineEdit_setup_db.setValidator(validator3)
         self.pushButton_setup_connect.clicked.connect(lambda: self.buttonConnectDb())
         self.comboBox_setup_table.currentTextChanged.connect(self.tableTrainingCheck)
         self.lineEdit_setup_text_col.keyReleaseEvent = self.setupHandleKeyReleaseText
@@ -600,7 +621,25 @@ class Ui_MainWindow(object):
         self.pushButton_setup_next.clicked.connect(lambda: self.setupNext())
 
         # tab fixword
+        regexLetter = QtCore.QRegExp(r'^[a-z]*$')
+        validatorWordFix = QtGui.QRegExpValidator(regexLetter,self.lineEdit_fixword_wordfix)
+        self.lineEdit_fixword_wordfix.setValidator(validatorWordFix)
         self.pushButton_fixword_save.clicked.connect(self.fixWordSave)
+        self.pushButton_fixword_back.clicked.connect(self.fixWordBack)
+        self.pushButton_fixword_next.clicked.connect(self.fixWordNext)
+
+        # tab preprocessing
+        self.radioButton_preprocessing_nopreprocessing.toggled.connect(self.preprocessCheckNoPre)
+        self.radioButton_preprocessing_withpreprocessing.toggled.connect(self.preprocessCheckPre)
+        self.radioButton_preprocessing_nofeatureselection.toggled.connect(self.preprocessCheckNoFS)
+        self.radioButton_preprocessing_featureselection_ig.toggled.connect(self.preprocessCheckFS)
+        regexNumber = QtCore.QRegExp(r'^[0-9]*$')
+        validatorPreNum = QtGui.QRegExpValidator(regexNumber,self.lineEdit_preprocessing_numberoffeature)
+        self.lineEdit_preprocessing_numberoffeature.setValidator(validatorPreNum)
+        regexDecimal = QtCore.QRegExp(r'^[0-9]\d*(\.\d+)?$')
+        validatorPreDec = QtGui.QRegExpValidator(regexDecimal,self.lineEdit_preprocessing_threshold)
+        self.lineEdit_preprocessing_threshold.setValidator(validatorPreDec)
+        self.pushButton_preprocessing_process.clicked.connect(self.preprocessProcess)
 
 # tab setup
     def buttonConnectDb(self):
@@ -677,6 +716,10 @@ class Ui_MainWindow(object):
     def setupNext(self):
         self.selectedTable = str(self.comboBox_setup_table.currentText())
         if self.selectedTable:
+            self.app.setTrainingTable(self.selectedTable)
+            self.app.setTextCol(self.setupTextCol)
+            self.app.setClassCol(self.setupClassCol)
+            self.app.setExceptionalFeature(self.exceptCol)
             self.fixWordTableRefresh(self.gridLayout_10)
             self.tabWidget.setTabEnabled(1,True)
             self.tabWidget.setTabEnabled(2,True)
@@ -759,6 +802,142 @@ class Ui_MainWindow(object):
             self.fixWord_idData = 0
             print("Saved")
 
+    def fixWordBack(self):
+        self.tabWidget.setCurrentIndex(0)
+
+    def fixWordNext(self):
+        self.tabWidget.setCurrentIndex(2)
+
+# tab preprocessing
+    def preprocessCheckNoPre(self,enabled):
+        if enabled:
+            self.preprocessing_doPreprocessing = False
+
+    def preprocessCheckPre(self,enabled):
+        if enabled:
+            self.preprocessing_doPreprocessing = True
+
+    def preprocessCheckNoFS(self,enabled):
+        if enabled:
+            self.preprocessing_doFeatureSelection = False
+            self.lineEdit_preprocessing_numberoffeature.setEnabled(False)
+            self.lineEdit_preprocessing_threshold.setEnabled(False)
+
+    def preprocessCheckFS(self,enabled):
+        if enabled:
+            self.preprocessing_doFeatureSelection = True
+            self.lineEdit_preprocessing_numberoffeature.setEnabled(True)
+            self.lineEdit_preprocessing_threshold.setEnabled(True)
+
+    def preprocessProcess(self):
+        print(self.preprocessing_doPreprocessing)
+        print(self.preprocessing_doFeatureSelection)
+
+        if self.preprocessing_doFeatureSelection:
+            if self.lineEdit_preprocessing_numberoffeature.text():
+                self.preprocessing_numFeatureToRetain = self.lineEdit_preprocessing_numberoffeature.text()
+            if self.lineEdit_preprocessing_threshold.text():
+                self.preprocessing_thresholdFeatureIgnore = self.lineEdit_preprocessing_threshold.text()
+
+
+        features = self.app.preprocessing(self.preprocessing_doPreprocessing,self.preprocessing_doFeatureSelection,self.preprocessing_numFeatureToRetain,self.preprocessing_thresholdFeatureIgnore)
+
+        # CHECK POINT > kurang hitung dibawah ini dan tampilkan di window
+        totalFeatureBefore = 0
+        totalFeatureAfter = 0
+        reduction = 0
+        if totalFeatureBefore != 0:
+            reduction = totalFeatureAfter/totalFeatureBefore*100
+
+        self.preprocessTable(self.gridLayout_13,features)
+
+    def preprocessTable(self,lay,features):
+        import sip
+
+        lay.removeWidget(self.tableWidget_preprocessing_features_list_after)
+        sip.delete(self.tableWidget_preprocessing_features_list_after)
+        self.tableWidget_preprocessing_features_list_after= None
+
+        lay.removeWidget(self.tableWidget_preprocessing_vsm)
+        sip.delete(self.tableWidget_preprocessing_vsm)
+        self.tableWidget_preprocessing_vsm= None
+
+        colCount = 0
+        rowCount = 0
+        data = None
+        cols = []
+
+        vms_colCount = 0
+        vms_rowCount = 0
+        vms_data = None
+        vms_cols = []
+
+        if features != None:
+            feature = features['feature']
+            vsm = features['vsm']
+
+            cols = [i for i in feature]
+            colCount = len(cols)
+            rowCount = len(feature.index)
+
+            vms_cols = [i for i in vsm]
+            vms_colCount = len(vms_cols)
+            vms_rowCount = len(vsm.index)
+
+
+        #for table feature
+        self.tableWidget_preprocessing_features_list_after = QtWidgets.QTableWidget(rowCount, colCount)
+        self.tableWidget_preprocessing_features_list_after.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableWidget_preprocessing_features_list_after.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+
+        vheader = QtWidgets.QHeaderView(QtCore.Qt.Vertical)
+        vheader.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.tableWidget_preprocessing_features_list_after.setVerticalHeader(vheader)
+        hheader = QtWidgets.QHeaderView(QtCore.Qt.Horizontal)
+        hheader.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.tableWidget_preprocessing_features_list_after.setHorizontalHeader(hheader)
+
+        self.tableWidget_preprocessing_features_list_after.setHorizontalHeaderLabels(cols) # !
+
+        #for table VSM
+        self.tableWidget_preprocessing_vsm = QtWidgets.QTableWidget(vms_rowCount, vms_colCount)
+        self.tableWidget_preprocessing_vsm.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableWidget_preprocessing_vsm.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+
+        vms_vheader = QtWidgets.QHeaderView(QtCore.Qt.Vertical)
+        vheader.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.tableWidget_preprocessing_vsm.setVerticalHeader(vms_vheader)
+        vms_hheader = QtWidgets.QHeaderView(QtCore.Qt.Horizontal)
+        hheader.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.tableWidget_preprocessing_vsm.setHorizontalHeader(vms_hheader)
+
+        self.tableWidget_preprocessing_vsm.setHorizontalHeaderLabels(vms_cols) # !
+
+
+        if features != None:
+            feature = features['feature']
+            vsm = features['vsm']
+
+            for index,row in feature.iterrows():
+                jj = 0
+                for j in cols:
+                    feat = row[j]
+                    if not feat:
+                        feat = ""
+                    item = QtWidgets.QTableWidgetItem(str(feat))
+                    self.tableWidget_preprocessing_features_list_after.setItem(index, jj, item)
+                    jj+=1
+
+            for index,row in vsm.iterrows():
+                jj = 0
+                for j in vms_cols:
+                    feat = row[j]
+                    item = QtWidgets.QTableWidgetItem(str(feat))
+                    self.tableWidget_preprocessing_vsm.setItem(index, jj, item)
+                    jj+=1
+
+        lay.addWidget(self.tableWidget_preprocessing_features_list_after, 3, 0, 1, 2)
+        lay.addWidget(self.tableWidget_preprocessing_vsm, 3, 2, 1, 6)
 
 if __name__ == "__main__":
     import sys

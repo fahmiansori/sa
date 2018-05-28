@@ -22,6 +22,7 @@ class Preprocessing():
 
     def removesymbol(self,text):
         cleantext = text
+        cleantext = cleantext.lower()
         url_pattern = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
         # symbol_pattern = '[\[\]\(\)!@#$%^&*-+=_`~\{\}\\\/;:\'\"<>,.?]'
         # allowonlyletternumber_pattern = "(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"
@@ -34,8 +35,7 @@ class Preprocessing():
         return cleantext
 
     def tokenize(self,text):
-        tokenized = text.lower()
-        tokenized = tokenized.split(" ")
+        tokenized = text.split(" ")
         return tokenized
 
     def fixword(self,texts):
@@ -109,7 +109,7 @@ class Preprocessing():
 
     def process(self,text):
         start_time = time.time()
-        # 1 Grab data from database & Symbol removal & casefolding
+        # 1 Symbol removal & casefolding
         text = self.removesymbol(text)
         # 2 Tokenize
         token_text = self.tokenize(text)
@@ -124,6 +124,12 @@ class Preprocessing():
         result = stemmed_text
         # print("--- %s seconds ---" % (time.time() - start_time))
         return result
+
+    def processNoPre(self,text):
+        start_time = time.time()
+        text = self.removesymbol(text)
+
+        return text
 
 
 # t = "sy suka dengan dia, namun dia tidak suka dengan saya dan dia, sangat mendebarkan @jokowi 2 periode"

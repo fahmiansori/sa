@@ -27,15 +27,15 @@ class App():
         self.text_col = 'text'
 
         self.con = None
-        self.preprocessing = None
-        self.feature_selection = None
+        # self.preprocessing = None
+        # self.feature_selection = None
 
     def checkConnection(self):
         if self.con != None:
             return True
         return False
 
-    def connectTo(self,host,user,password,db): # connect to different db
+    def connectTo(self,host,user,password,db): # connect to different db and return the connection
         tryConnect = Database()
         tryConnectStat = tryConnect.connect(host,user,password,db)
         if tryConnectStat['success'] == True:
@@ -59,6 +59,45 @@ class App():
         ret['msg'] = tryConnectStat['msg']
         ret['tables'] = tables
         return ret
+
+    def setTrainingTable(self,table):
+        self.training_table = table
+    def setExceptionalFeature(self,ex):
+        self.exceptional_feature = ex
+    def setClassCol(self,col):
+        self.class_col = col
+    def setTextCol(self,col):
+        self.text_col = col
+
+    def preprocessing(self,doPreprocessing,doFeatureSelection,take_feature,threshold):
+        features = None
+        if self.con != None:
+            if self.training_table:
+                dataTraining = self.con.getDataAsDF(self.training_table)
+                if dataTraining is not None:
+                    p = Preprocessing()
+                    for index,row in dataTraining.iterrows():
+                        text = row[self.text_col]
+                        if doPreprocessing:
+                            pretext = p.process(text)
+                        else:
+                            pretext = p.processNoPre(text)
+                        # print("Ori : ",text)
+                        print("Preprocessed : ",pretext," -> ",row[self.class_col])
+                        dataTraining.at[index,self.text_col] = pretext
+
+                    v = Vsm()
+                    vsm = v.vsm(dataTraining,exceptional_feature=self.exceptional_feature,coltext=self.text_col,colclass=self.class_col)
+
+                    if doFeatureSelection:
+                        f = InfoGain()
+                        vsm = f.run(vsm,take_feature=take_feature,threshold=threshold,exceptional_feature=self.exceptional_feature,colclas=self.class_col)
+                    features = vsm
+
+            else:
+                print("No training table!")
+
+        return features
 
     def run(self):
         df = pd.read_sql('SELECT * FROM '+self.training_table+' order by id asc limit 0,9', con=self.con)
