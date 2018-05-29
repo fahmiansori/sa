@@ -61,7 +61,7 @@ class Preprocessing():
 
     def isRootWordDB(self,text):
         cursor = self.con.cursor()
-        sql = "SELECT * from root_word where rootword=%s"
+        sql = "SELECT id from root_word where rootword=%s"
         try:
             cursor.execute(sql,text)
             # result = cursor.fetchall()
@@ -70,7 +70,7 @@ class Preprocessing():
                 return False
             cursor.close()
         except :
-            print("Error check in DB.")
+            print("Error check in DB. > isRootWordDB[preprocessing.py]")
 
         return True
 

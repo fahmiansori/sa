@@ -25,6 +25,7 @@ from classificator import NaiveBayes
 from classificator import Vsm
 from feature_selection import InfoGain
 from db import Database
+from math import floor
 
 class App():
     def __init__(self):
@@ -77,6 +78,17 @@ class App():
     def setTextCol(self,col):
         self.text_col = col
 
+    def builtVSM(self,doFeatureSelection,take_feature,threshold,dataTraining=None):
+        if dataTraining is None:
+            dataTraining = self.dataTraining
+
+        v = Vsm()
+        vsm = v.vsm(dataTraining,exceptional_feature=self.exceptional_feature,coltext=self.text_col,colclass=self.class_col)
+        if doFeatureSelection:
+            f = InfoGain()
+            vsm = f.run(vsm,take_feature=take_feature,threshold=threshold,exceptional_feature=self.exceptional_feature,colclas=self.class_col)
+        return vsm
+
     def preprocessing(self,doPreprocessing,doFeatureSelection,take_feature,threshold):
         features = None
         if self.con != None:
@@ -100,15 +112,9 @@ class App():
                         # print("Preprocessed : ",pretext," -> ",row[self.class_col])
                         self.dataTraining.at[index,self.text_col] = pretext
                     uniqFeature = set(uniqFeature) # bad performance
-
-                    v = Vsm()
-                    vsm = v.vsm(self.dataTraining,exceptional_feature=self.exceptional_feature,coltext=self.text_col,colclass=self.class_col)
                     features['featurebefore'] = len(uniqFeature) # bad performance
 
-                    if doFeatureSelection:
-                        f = InfoGain()
-                        vsm = f.run(vsm,take_feature=take_feature,threshold=threshold,exceptional_feature=self.exceptional_feature,colclas=self.class_col)
-                    features['vsm'] = vsm
+                    features['vsm'] = self.builtVSM(doFeatureSelection,take_feature,threshold)
 
             else:
                 print("No training table!")
@@ -120,6 +126,11 @@ class App():
         vsm = vsm['vsm']
         model = self.classificator.builtmodel(vsm)
         return model
+
+    def trainingClassificatorEval(self,vsm):
+        classificator = NaiveBayes()
+        classificator.builtmodel(vsm)
+        return classificator
 
     def getDataTrainingProperty(self,clas):
         ret = {}
@@ -136,4 +147,68 @@ class App():
                     tdpc+=", "
             ret['totaltrainingdataperclas'] = tdpc
             return ret
+        return False
+
+    def evalKFoldCV(self,totaltrainingdata,folds):
+        if self.dataTraining is not None:
+            dataLeft = totaltrainingdata%folds
+            dataPerFold = floor(totaltrainingdata/folds)
+            dataIndexFolds = []
+            foldPos = 1
+            dataPos = 1
+            for i in range(totaltrainingdata):
+                if dataPos == 1:
+                    newFold = []
+                if dataPos <= dataPerFold:
+                    newFold.append(i)
+                    dataPos+=1
+                    if dataPos > dataPerFold:
+                        dataPos=1
+                if dataPos == 1:
+                    dataIndexFolds.append(newFold)
+                    foldPos+=1
+                if foldPos > folds:
+                    break
+
+            if dataLeft > 0:
+                indexToAdd = 0
+                for i in range((totaltrainingdata-dataLeft),totaltrainingdata):
+                    dataIndexFolds[indexToAdd].append(i)
+                    indexToAdd+=1
+
+            evalResults = []
+            for i in range(folds):
+                dataIndexFolds_copy = list(dataIndexFolds)
+                testData = self.dataTraining.iloc[dataIndexFolds_copy[i]]
+                del dataIndexFolds_copy[i]
+                trainingDataList = []
+                for j in dataIndexFolds_copy:
+                    trainingDataList.extend(j)
+                trainingData = self.dataTraining.iloc[trainingDataList]
+                vsmTraining = self.builtVSM(False,0,0,dataTraining=trainingData)
+                model = self.trainingClassificatorEval(vsmTraining)
+                evalResult = model.testclassificationDataframe(testData,self.text_col,self.class_col)
+                evalResults.append(evalResult)
+
+            avg_accuration = 0
+            avg_precision = 0
+            avg_recall = 0
+            for i in evalResults:
+                avg_accuration += i['accuration']
+                avg_precision += i['precision']
+                avg_recall += i['recall']
+            er = len(evalResults)
+            avg_accuration = avg_accuration/er
+            avg_precision = avg_precision/er
+            avg_recall = avg_recall/er
+            ret = {}
+            ret['accuration'] = float(format(avg_accuration,'.2f'))
+            ret['precision'] = float(format(avg_precision,'.2f'))
+            ret['recall'] = float(format(avg_recall,'.2f'))
+
+            # print(dataIndexFolds)
+            return ret
+
+        else:
+            print("No data training found!")
         return False

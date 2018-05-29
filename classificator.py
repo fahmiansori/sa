@@ -163,14 +163,29 @@ class NaiveBayes():
 
         return False
 
-    def testclassificationDataframe(self,model,testdataframe):
-        countfalse = 0
-        counttrue = 0
+    def testclassificationDataframe(self,testdataframe,text_col,clas_col,model=None):
+        if model is None:
+            model = self.model
+
         totaldata = len(testdataframe.index)
+        confusionMatrix = {}
+        tp = {}
+        tn = {}
+        fp = {}
+        fn = {}
+        for c in model['clas']:
+            prediction = {}
+            for cc in model['clas']:
+                prediction[cc] = 0
+            confusionMatrix[c] = prediction
+            tp[c] = 0
+            tn[c] = 0
+            fp[c] = 0
+            fn[c] = 0
 
         for index,row in testdataframe.iterrows():
-            actualclas = row['clas']
-            testdata_token = row['text'].split(" ")
+            actualclas = row[clas_col]
+            testdata_token = row[text_col].split(" ")
             classify = {}
             for c in model['clas']:
                 vj = model['prior'][c];
@@ -190,19 +205,53 @@ class NaiveBayes():
                     argmax = c
                 prev = curr
 
-            if argmax == actualclas:
-                counttrue+=1
-            else:
-                countfalse+=1
+            confusionMatrix[actualclas][argmax]+=1
 
-            print("Test data : ",testdata)
-            print('Classification : ',argmax,', Actual class : ',actualclas)
+            # print("Test data : ",row[text_col])
+            # print('Classification : ',argmax,', Actual class : ',actualclas)
 
-        accuration = (counttrue/totaldata)*100
-        print("Test data : ",totaldata)
-        print("Accuration : ",accuration)
+        # print("Confusion Matrix")
+        # print(confusionMatrix)
+        for c in model['clas']: # > actual class kebawah
+            for cc in model['clas']: # > prediction kesamping kanan
+                if cc == c:
+                    tp[c] += confusionMatrix[c][cc]
+                else:
+                    fp[cc] += confusionMatrix[c][cc]
+                    fn[c] += confusionMatrix[c][cc]
 
-        return True
+                for ccc in model['clas']:
+                    if ccc != c and cc != c:
+                        tn[c] += confusionMatrix[cc][ccc]
+
+        totalclas = len(model['clas'])
+        accuration = 0
+        precision = 0
+        avg_precision = 0
+        recall = 0
+        avg_recall = 0
+        for c in model['clas']:
+            # print("tp",c,">",tp[c],"fp",c,">",fp[c],"fn",c,">",fn[c])
+            accuration += tp[c]
+            try:
+                precision = tp[c]/(tp[c]+fp[c])
+            except:
+                precision = 0
+            avg_precision += precision
+            try:
+                recall = tp[c]/(tp[c]+fn[c])
+            except:
+                recall = 0
+            avg_recall += recall
+        accuration = accuration/totaldata
+        avg_precision = avg_precision/totalclas
+        avg_recall = avg_recall/totalclas
+        ret = {}
+        ret['accuration'] = accuration
+        ret['precision'] = avg_precision
+        ret['recall'] = avg_recall
+
+        return ret
 
 class Vsm():
     def vsm(self,data,exceptional_feature=[],coltext='text',colclass='clas'):

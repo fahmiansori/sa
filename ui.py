@@ -8,7 +8,9 @@
 
 # CHECK POINT >> Add checker for abbreviation words! Then add to DB!
 # NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
-# CHECK POINT >>>>> K-FOLD BUILT & progress bar preprocessing
+# CHECK POINT >>>>> progress bar preprocessing
+# CHECK POINT >>>>> Error check in DB. > isRootWordDB[preprocessing.py]
+# CHECK POINT >>>>> Disable button while on process to avoid frezee, and enable again after process is complete
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app import App
@@ -45,6 +47,7 @@ class Ui_MainWindow(object):
         # tab training
         self.model = None
         self.trainingFold_def = 10
+        self.training_total_data = 0
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -1041,17 +1044,18 @@ class Ui_MainWindow(object):
                 clas = self.model['clas']
                 totalclas = str(len(clas))
                 dataTrainingPr = self.app.getDataTrainingProperty(clas)
-                totaldata = str(dataTrainingPr['totaltrainingdata'])
+                self.training_total_data = dataTrainingPr['totaltrainingdata']
+                totaldata = str(self.training_total_data)
                 totaldataperc = dataTrainingPr['totaltrainingdataperclas']
                 timeprocess = self.preprocessing_time
                 # akumulasi dr preprocessing
                 timeprocess = (time.time() - start_time) + timeprocess
-                timeprocess = str(timeprocess)
+                # timeprocess = str(timeprocess)
                 self.label_training_total_class.setText(totalclas)
                 self.label_training_total_data.setText(totaldata+" -> ")
                 self.label_training_data_perclass.setText(totaldataperc)
                 self.label_training_total_feature.setText(featureprocessed)
-                self.label_training_time.setText(timeprocess)
+                self.label_training_time.setText(format(timeprocess,'.2f'))
 
                 self.groupBox_training_eval.setEnabled(True)
                 self.label_training_status.setText("Training complete.")
@@ -1065,16 +1069,17 @@ class Ui_MainWindow(object):
         if not folds:
             folds = self.trainingFold_def
         folds = int(folds)
-        trainingDataCount = 0 # edit this
-        if folds > trainingDataCount:
-            print("Folds cannot be higher as training data count!")
-        else:
-            # CHECK POINT >>>>> K-FOLD BUILT & progress bar preprocessing
 
-            # if neccesary, add some condition to check ratio of fold, eg : 9 fold for 10 data is not rasionable
-            # or find a rasionable folds using loop, then add % operation and check if there are 0 left or not, if not continue look at loop after 0 left
-            # do K-Fold
-            pass
+        if folds > self.training_total_data:
+            print("Folds cannot be higher as training data count!")
+        elif folds < 2:
+            print("Cannot only 1 fold!!")
+        else:
+            eval = self.app.evalKFoldCV(self.training_total_data,folds)
+            if eval is not False:
+                self.label_training_accuration.setText(str(eval['accuration']))
+                self.label_training_precision.setText(str(eval['precision']))
+                self.label_training_recall.setText(str(eval['recall']))
 
     def trainingTestSentence(self):
         sentence = self.lineEdit_training_sentence.text()
