@@ -6,14 +6,11 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-# CHECK POINT >> Add checker for abbreviation words! Then add to DB!
-# NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
-# CHECK POINT >>>>> K-FOLD BUILT & progress bar preprocessing
+# WARNING: check point > tab word fix, next and back button to finish
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app import App
 import re
-import time
 
 class Ui_MainWindow(object):
     def __init__(self):
@@ -21,8 +18,6 @@ class Ui_MainWindow(object):
 
         # tab setup
         self.selectedTable = ""
-        self.setupTextCol_def = "text"
-        self.setupClassCol_def = "clas"
         self.setupTextCol = "text"
         self.setupClassCol = "clas"
         self.exceptCol = []
@@ -40,11 +35,6 @@ class Ui_MainWindow(object):
         self.preprocessing_numFeatureToRetain = 0
         self.preprocessing_thresholdFeatureIgnore = 0
         self.vsmFeature = None
-        self.preprocessing_time = 0
-
-        # tab training
-        self.model = None
-        self.trainingFold_def = 10
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -371,9 +361,9 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         spacerItem16 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem16)
-        self.pushButton_training = QtWidgets.QPushButton(self.groupBox_5)
-        self.pushButton_training.setObjectName("pushButton_training")
-        self.horizontalLayout_2.addWidget(self.pushButton_training)
+        self.pushButton = QtWidgets.QPushButton(self.groupBox_5)
+        self.pushButton.setObjectName("pushButton")
+        self.horizontalLayout_2.addWidget(self.pushButton)
         spacerItem17 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem17)
         self.gridLayout_16.addLayout(self.horizontalLayout_2, 0, 0, 1, 8)
@@ -401,97 +391,79 @@ class Ui_MainWindow(object):
         spacerItem19 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_16.addItem(spacerItem19, 5, 5, 1, 1)
         self.gridLayout_15.addWidget(self.groupBox_5, 0, 0, 1, 3)
-        self.groupBox_training_eval = QtWidgets.QGroupBox(self.tab_training)
-        self.groupBox_training_eval.setObjectName("groupBox_training_eval")
-        self.gridLayout_17 = QtWidgets.QGridLayout(self.groupBox_training_eval)
+        self.groupBox_6 = QtWidgets.QGroupBox(self.tab_training)
+        self.groupBox_6.setObjectName("groupBox_6")
+        self.gridLayout_17 = QtWidgets.QGridLayout(self.groupBox_6)
         self.gridLayout_17.setObjectName("gridLayout_17")
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        spacerItem20 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem20)
-        self.pushButton_training_test = QtWidgets.QPushButton(self.groupBox_training_eval)
-        self.pushButton_training_test.setObjectName("pushButton_training_test")
-        self.horizontalLayout_3.addWidget(self.pushButton_training_test)
-        spacerItem21 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem21)
-        self.gridLayout_17.addLayout(self.horizontalLayout_3, 2, 0, 1, 5)
-        spacerItem22 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_17.addItem(spacerItem22, 4, 0, 1, 5)
-        self.label_22 = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_22 = QtWidgets.QLabel(self.groupBox_6)
         self.label_22.setObjectName("label_22")
         self.gridLayout_17.addWidget(self.label_22, 0, 0, 1, 1)
+        spacerItem20 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout_17.addItem(spacerItem20, 4, 0, 1, 4)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        spacerItem21 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem21)
+        self.pushButton_training_test = QtWidgets.QPushButton(self.groupBox_6)
+        self.pushButton_training_test.setObjectName("pushButton_training_test")
+        self.horizontalLayout_3.addWidget(self.pushButton_training_test)
+        spacerItem22 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem22)
+        self.gridLayout_17.addLayout(self.horizontalLayout_3, 2, 0, 1, 4)
+        self.label_31 = QtWidgets.QLabel(self.groupBox_6)
+        self.label_31.setObjectName("label_31")
+        self.gridLayout_17.addWidget(self.label_31, 1, 0, 1, 1)
         spacerItem23 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_17.addItem(spacerItem23, 1, 1, 1, 1)
+        self.gridLayout_17.addItem(spacerItem23, 1, 2, 1, 1)
+        self.lineEdit_training_fold = QtWidgets.QLineEdit(self.groupBox_6)
+        self.lineEdit_training_fold.setObjectName("lineEdit_training_fold")
+        self.gridLayout_17.addWidget(self.lineEdit_training_fold, 1, 1, 1, 1)
+        spacerItem24 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout_17.addItem(spacerItem24, 1, 3, 1, 1)
         self.gridLayout_18 = QtWidgets.QGridLayout()
         self.gridLayout_18.setObjectName("gridLayout_18")
-        self.label_38 = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_38 = QtWidgets.QLabel(self.groupBox_6)
         self.label_38.setObjectName("label_38")
         self.gridLayout_18.addWidget(self.label_38, 1, 1, 1, 1)
-        self.label_37 = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_37 = QtWidgets.QLabel(self.groupBox_6)
         self.label_37.setObjectName("label_37")
         self.gridLayout_18.addWidget(self.label_37, 1, 0, 1, 1)
-        self.label_32 = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_32 = QtWidgets.QLabel(self.groupBox_6)
         self.label_32.setObjectName("label_32")
         self.gridLayout_18.addWidget(self.label_32, 0, 0, 1, 1)
-        spacerItem24 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_18.addItem(spacerItem24, 0, 4, 1, 1)
-        self.label_33 = QtWidgets.QLabel(self.groupBox_training_eval)
+        spacerItem25 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout_18.addItem(spacerItem25, 0, 4, 1, 1)
+        self.label_33 = QtWidgets.QLabel(self.groupBox_6)
         self.label_33.setObjectName("label_33")
         self.gridLayout_18.addWidget(self.label_33, 0, 1, 1, 1)
-        self.label_training_accuration = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_training_accuration = QtWidgets.QLabel(self.groupBox_6)
         self.label_training_accuration.setObjectName("label_training_accuration")
         self.gridLayout_18.addWidget(self.label_training_accuration, 0, 2, 1, 1)
-        self.label_36 = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_36 = QtWidgets.QLabel(self.groupBox_6)
         self.label_36.setObjectName("label_36")
         self.gridLayout_18.addWidget(self.label_36, 0, 3, 1, 1)
-        self.label_training_precision = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_training_precision = QtWidgets.QLabel(self.groupBox_6)
         self.label_training_precision.setObjectName("label_training_precision")
         self.gridLayout_18.addWidget(self.label_training_precision, 1, 2, 1, 1)
-        self.label_40 = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_40 = QtWidgets.QLabel(self.groupBox_6)
         self.label_40.setObjectName("label_40")
         self.gridLayout_18.addWidget(self.label_40, 2, 0, 1, 1)
-        self.label_41 = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_41 = QtWidgets.QLabel(self.groupBox_6)
         self.label_41.setObjectName("label_41")
         self.gridLayout_18.addWidget(self.label_41, 2, 1, 1, 1)
-        self.label_training_recall = QtWidgets.QLabel(self.groupBox_training_eval)
+        self.label_training_recall = QtWidgets.QLabel(self.groupBox_6)
         self.label_training_recall.setObjectName("label_training_recall")
         self.gridLayout_18.addWidget(self.label_training_recall, 2, 2, 1, 1)
-        self.gridLayout_17.addLayout(self.gridLayout_18, 3, 0, 1, 5)
-        spacerItem25 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_17.addItem(spacerItem25, 6, 0, 1, 5)
-        self.gridLayout_8 = QtWidgets.QGridLayout()
-        self.gridLayout_8.setObjectName("gridLayout_8")
-        self.lineEdit_training_fold = QtWidgets.QLineEdit(self.groupBox_training_eval)
-        self.lineEdit_training_fold.setObjectName("lineEdit_training_fold")
-        self.gridLayout_8.addWidget(self.lineEdit_training_fold, 0, 1, 1, 1)
-        self.label_31 = QtWidgets.QLabel(self.groupBox_training_eval)
-        self.label_31.setObjectName("label_31")
-        self.gridLayout_8.addWidget(self.label_31, 0, 0, 1, 1)
-        self.gridLayout_17.addLayout(self.gridLayout_8, 1, 0, 1, 1)
+        self.gridLayout_17.addLayout(self.gridLayout_18, 3, 0, 1, 4)
         spacerItem26 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_17.addItem(spacerItem26, 1, 3, 1, 1)
-        spacerItem27 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_17.addItem(spacerItem27, 1, 2, 1, 1)
-        spacerItem28 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_17.addItem(spacerItem28, 1, 4, 1, 1)
-        self.gridLayout_9 = QtWidgets.QGridLayout()
-        self.gridLayout_9.setObjectName("gridLayout_9")
-        self.lineEdit_training_sentence = QtWidgets.QLineEdit(self.groupBox_training_eval)
-        self.lineEdit_training_sentence.setObjectName("lineEdit_training_sentence")
-        self.gridLayout_9.addWidget(self.lineEdit_training_sentence, 1, 0, 1, 1)
-        self.pushButton_training_test_sentence = QtWidgets.QPushButton(self.groupBox_training_eval)
-        self.pushButton_training_test_sentence.setObjectName("pushButton_training_test_sentence")
-        self.gridLayout_9.addWidget(self.pushButton_training_test_sentence, 1, 1, 1, 1)
-        self.label_training_result_test_sentence = QtWidgets.QLabel(self.groupBox_training_eval)
-        self.label_training_result_test_sentence.setText("")
-        self.label_training_result_test_sentence.setObjectName("label_training_result_test_sentence")
-        self.gridLayout_9.addWidget(self.label_training_result_test_sentence, 2, 0, 1, 1)
-        self.label_35 = QtWidgets.QLabel(self.groupBox_training_eval)
-        self.label_35.setObjectName("label_35")
-        self.gridLayout_9.addWidget(self.label_35, 0, 0, 1, 1)
-        self.gridLayout_17.addLayout(self.gridLayout_9, 5, 0, 1, 5)
+        self.gridLayout_17.addItem(spacerItem26, 5, 0, 1, 4)
+        self.groupBox_5.raise_()
+        self.groupBox_5.raise_()
+        self.groupBox_5.raise_()
         self.label_22.raise_()
-        self.gridLayout_15.addWidget(self.groupBox_training_eval, 1, 0, 1, 3)
+        self.label_31.raise_()
+        self.lineEdit_training_fold.raise_()
+        self.gridLayout_15.addWidget(self.groupBox_6, 1, 0, 1, 3)
         self.tabWidget.addTab(self.tab_training, "")
         self.tab_analysis = QtWidgets.QWidget()
         self.tab_analysis.setObjectName("tab_analysis")
@@ -587,7 +559,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_preprocessing), _translate("MainWindow", "Preprocessing"))
         self.pushButton_training_back.setText(_translate("MainWindow", "Back"))
         self.pushButton_training_analys.setText(_translate("MainWindow", "Analysis Data"))
-        self.groupBox_5.setTitle(_translate("MainWindow", "Training Classifier (Naive Bayes)"))
+        self.groupBox_5.setTitle(_translate("MainWindow", "Training"))
         self.label_34.setText(_translate("MainWindow", "second"))
         self.label_25.setText(_translate("MainWindow", "Total class"))
         self.label_23.setText(_translate("MainWindow", "Total training data"))
@@ -596,15 +568,16 @@ class Ui_MainWindow(object):
         self.label_training_total_feature.setText(_translate("MainWindow", "0"))
         self.label_training_time.setText(_translate("MainWindow", "0"))
         self.label_training_total_class.setText(_translate("MainWindow", "0"))
-        self.pushButton_training.setText(_translate("MainWindow", "Train data"))
+        self.pushButton.setText(_translate("MainWindow", "Train data"))
         self.label_26.setText(_translate("MainWindow", "Time elapsed"))
         self.label_27.setText(_translate("MainWindow", ":"))
         self.label_28.setText(_translate("MainWindow", ":"))
         self.label_30.setText(_translate("MainWindow", ":"))
         self.label_29.setText(_translate("MainWindow", ":"))
-        self.groupBox_training_eval.setTitle(_translate("MainWindow", "Evaluation"))
-        self.pushButton_training_test.setText(_translate("MainWindow", "Test"))
+        self.groupBox_6.setTitle(_translate("MainWindow", "Evaluation"))
         self.label_22.setText(_translate("MainWindow", "K-Fold Cross Validation"))
+        self.pushButton_training_test.setText(_translate("MainWindow", "Test"))
+        self.label_31.setText(_translate("MainWindow", "Folds"))
         self.label_38.setText(_translate("MainWindow", ":"))
         self.label_37.setText(_translate("MainWindow", "Precision"))
         self.label_32.setText(_translate("MainWindow", "Accuration"))
@@ -615,11 +588,6 @@ class Ui_MainWindow(object):
         self.label_40.setText(_translate("MainWindow", "Recall"))
         self.label_41.setText(_translate("MainWindow", ":"))
         self.label_training_recall.setText(_translate("MainWindow", "0"))
-        self.label_31.setText(_translate("MainWindow", "Folds"))
-        self.lineEdit_training_fold.setPlaceholderText(_translate("MainWindow", "default : 10"))
-        self.lineEdit_training_sentence.setPlaceholderText(_translate("MainWindow", "Enter sentence here"))
-        self.pushButton_training_test_sentence.setText(_translate("MainWindow", "Test sentence"))
-        self.label_35.setText(_translate("MainWindow", "Sentence Test"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_training), _translate("MainWindow", "Training"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_analysis), _translate("MainWindow", "Analysis"))
 
@@ -628,24 +596,14 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabEnabled(2,False)
         self.tabWidget.setTabEnabled(3,False)
         self.tabWidget.setTabEnabled(4,False)
-
         # tab setup
         self.pushButton_setup_next.setEnabled(False)
         self.pushButton_preprocessing_next.setEnabled(False)
-
         # tab preprocessing
         self.radioButton_preprocessing_withpreprocessing.setChecked(True)
         self.radioButton_preprocessing_nofeatureselection.setChecked(True)
         self.lineEdit_preprocessing_numberoffeature.setEnabled(False)
         self.lineEdit_preprocessing_threshold.setEnabled(False)
-
-        # tab training
-        self.groupBox_training_eval.setEnabled(False)
-        # self.lineEdit_training_fold.setEnabled(False)
-        # self.pushButton_training_test.setEnabled(False)
-        # self.lineEdit_training_sentence.setEnabled(False)
-        # self.pushButton_training_test_sentence.setEnabled(False)
-        self.pushButton_training_analys.setEnabled(False)
 
     def connectAction(self):
         # tab setup
@@ -687,12 +645,6 @@ class Ui_MainWindow(object):
         self.pushButton_preprocessing_next.clicked.connect(self.preprocessNext)
 
         # tab training
-        self.pushButton_training.clicked.connect(self.trainingData)
-        validatorNumFold = QtGui.QRegExpValidator(regexNumber,self.lineEdit_training_fold)
-        self.lineEdit_training_fold.setValidator(validatorNumFold)
-        self.pushButton_training_test.clicked.connect(self.trainingTestEvalKFold)
-        self.pushButton_training_test_sentence.clicked.connect(self.trainingTestSentence)
-        self.pushButton_training_back.clicked.connect(self.trainingBack)
 
 # tab setup
     def buttonConnectDb(self):
@@ -711,13 +663,11 @@ class Ui_MainWindow(object):
 
     def setupCheckTrainingTable(self):
         if self.app.con != None:
-            if self.setupTextCol and self.setupClassCol and self.setupTextCol == self.setupClassCol:
+            if self.setupTextCol == self.setupClassCol:
                 print("Text column cannot be same as class column!")
                 self.pushButton_setup_next.setEnabled(False)
                 self.tabWidget.setTabEnabled(1,False)
                 self.tabWidget.setTabEnabled(2,False)
-                self.tabWidget.setTabEnabled(3,False)
-                # self.tabWidget.setTabEnabled(4,False)
             else:
                 query = "SELECT {0},{1} from {2}"
                 testCol = self.app.con.queryWithError(query.format(self.setupTextCol,self.setupClassCol,self.selectedTable))
@@ -727,19 +677,14 @@ class Ui_MainWindow(object):
                     self.pushButton_setup_next.setEnabled(False)
                     self.tabWidget.setTabEnabled(1,False)
                     self.tabWidget.setTabEnabled(2,False)
-                    self.tabWidget.setTabEnabled(3,False)
-                    # self.tabWidget.setTabEnabled(4,False)
                 elif testCol['errorcode'] == 0:
                     self.pushButton_setup_next.setEnabled(True)
                     print("Column text and class confirmed.")
                 else:
-                    print(query.format(self.setupTextCol,self.setupClassCol,self.selectedTable))
                     print("Error in check column for table. No {0}".format(testCol['errorcode']))
                     self.pushButton_setup_next.setEnabled(False)
                     self.tabWidget.setTabEnabled(1,False)
                     self.tabWidget.setTabEnabled(2,False)
-                    self.tabWidget.setTabEnabled(3,False)
-                    # self.tabWidget.setTabEnabled(4,False)
 
     def tableTrainingCheck(self,value):
         self.selectedTable = value
@@ -747,15 +692,11 @@ class Ui_MainWindow(object):
 
     def setupHandleKeyReleaseText(self,event):
         self.setupTextCol = self.lineEdit_setup_text_col.text()
-        if not self.setupTextCol:
-            self.setupTextCol = self.setupTextCol_def
         QtWidgets.QLineEdit.keyReleaseEvent(self.lineEdit_setup_text_col,event)
         self.setupCheckTrainingTable()
 
     def setupHandleKeyReleaseClass(self,event):
         self.setupClassCol = self.lineEdit_setup_clas_col.text()
-        if not self.setupClassCol:
-            self.setupClassCol = self.setupClassCol_def
         QtWidgets.QLineEdit.keyReleaseEvent(self.lineEdit_setup_clas_col,event)
         self.setupCheckTrainingTable()
 
@@ -784,8 +725,6 @@ class Ui_MainWindow(object):
             self.app.setTextCol(self.setupTextCol)
             self.app.setClassCol(self.setupClassCol)
             self.app.setExceptionalFeature(self.exceptCol)
-            # CHECK POINT >> Add checker for abbreviation words! Then add to DB!
-            # NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
             self.fixWordTableRefresh(self.gridLayout_10)
             self.tabWidget.setTabEnabled(1,True)
             self.tabWidget.setTabEnabled(2,True)
@@ -907,10 +846,7 @@ class Ui_MainWindow(object):
             else:
                 self.preprocessing_thresholdFeatureIgnore = 0
 
-        start_time = time.time()
         features = self.app.preprocessing(self.preprocessing_doPreprocessing,self.preprocessing_doFeatureSelection,self.preprocessing_numFeatureToRetain,self.preprocessing_thresholdFeatureIgnore)
-        self.preprocessing_time = time.time() - start_time
-
         self.preprocessTable(self.gridLayout_13,features)
 
     def preprocessTable(self,lay,features):
@@ -1031,61 +967,8 @@ class Ui_MainWindow(object):
         self.tabWidget.setCurrentIndex(3)
 
 #tab training
-    def trainingData(self):
-        if self.vsmFeature is not None:
-            start_time = time.time()
-            self.label_training_status.setText("Training data ... Please wait ...")
-            self.model = self.app.trainingClassificator(self.vsmFeature)
-            if self.model is not None:
-                featureprocessed = self.label_preprocessing_feature_after.text()
-                clas = self.model['clas']
-                totalclas = str(len(clas))
-                dataTrainingPr = self.app.getDataTrainingProperty(clas)
-                totaldata = str(dataTrainingPr['totaltrainingdata'])
-                totaldataperc = dataTrainingPr['totaltrainingdataperclas']
-                timeprocess = self.preprocessing_time
-                # akumulasi dr preprocessing
-                timeprocess = (time.time() - start_time) + timeprocess
-                timeprocess = str(timeprocess)
-                self.label_training_total_class.setText(totalclas)
-                self.label_training_total_data.setText(totaldata+" -> ")
-                self.label_training_data_perclass.setText(totaldataperc)
-                self.label_training_total_feature.setText(featureprocessed)
-                self.label_training_time.setText(timeprocess)
-
-                self.groupBox_training_eval.setEnabled(True)
-                self.label_training_status.setText("Training complete.")
-            else:
-                self.groupBox_training_eval.setEnabled(False)
-        else:
-            print("No training data loaded!")
-
-    def trainingTestEvalKFold(self):
-        folds = self.lineEdit_training_fold.text()
-        if not folds:
-            folds = self.trainingFold_def
-        folds = int(folds)
-        trainingDataCount = 0 # edit this
-        if folds > trainingDataCount:
-            print("Folds cannot be higher as training data count!")
-        else:
-            # CHECK POINT >>>>> K-FOLD BUILT & progress bar preprocessing
-
-            # if neccesary, add some condition to check ratio of fold, eg : 9 fold for 10 data is not rasionable
-            # or find a rasionable folds using loop, then add % operation and check if there are 0 left or not, if not continue look at loop after 0 left
-            # do K-Fold
-            pass
-
-    def trainingTestSentence(self):
-        sentence = self.lineEdit_training_sentence.text()
-        if sentence and self.model is not None:
-            c = self.app.classificator.classifyWithModel(self.model,sentence)
-            self.label_training_result_test_sentence.setText("Result class : {0}".format(str(c)))
-        else:
-            print("No sentence or no model found!")
-
-    def trainingBack(self):
-        self.tabWidget.setCurrentIndex(2)
+    def trainData(self):
+        return True
 
 if __name__ == "__main__":
     import sys

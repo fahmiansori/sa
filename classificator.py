@@ -1,24 +1,4 @@
-#MULTINOMIAL
-
-# ░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓░░░░
-# ░░░░░░░░░░░░░░░░░░░░░░░▓▓░▓▓▓░▓░░
-# ░░░░░░░░░░░░░░░░▓░▓░░▓▓▓░▓▓▓░░▓▓░
-# ░░░░░░░░░░░▓▓▓▓▓▓░▓░▓▓▓░░▓▓▓░▓▓▓▓
-# ░░░░░░▓▓▓▓▓▓▓▓▓░░▓▓░▓▓▓░░▓▓▓░▓░▓▓
-# ░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░▓▓▓▓░▓▓▓▓░░░▓▓
-# ░░░▓▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓▓░▓▓▓▓▓░░░▓▓
-# ░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓░░▓▓▓▓░░░▓▓▓
-# ░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓▓░░░▓▓▓░
-# ░░▓▓▓▓░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓░░░▓▓▓░░
-# ░░▓▓░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓░░▓▓▓▓▓░░░
-# ░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░
-# ░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░
-# ░░░░░░░░░░░░░░░▓▓▓▓▓░░░░░░░░░░░░░
-# ░░░░░░░░░░░▓▓▓▓▓▓░░░░░░░░░░░░░░░░
-# ░░░▓▓░░░▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░
-# ░░▓▓▓░▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░
-# ░▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░
-# ▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░﻿
+#MULTINOMIAL NB
 
 import pandas as pd
 from math import log10
@@ -30,6 +10,7 @@ class NaiveBayes():
         self.preprocess = Preprocessing()
 
     def builtmodel(self,data,colclas='clas'):
+        # data = data['vsm']
         df2 = data['vsm']
         column = data['column']
         columnlen = data['columnlen']
@@ -119,6 +100,39 @@ class NaiveBayes():
 
         return False
 
+    def classifyWithModel(self,model,sentence):
+        if model != None:
+            sentence = self.preprocess.process(sentence)
+            sentence_split = sentence.split(" ")
+
+            clas = {}
+            for c in model['clas']:
+                vj = model['prior'][c];
+                for cc in sentence_split:
+                    if cc in model['cond_prob'][c]:
+                        vj*=model['cond_prob'][c][cc]
+                clas[c] = vj
+
+            i = 0
+            prev = 0;
+            curr = 0;
+            argmax = ''
+            for c in model['clas']:
+                curr = clas[c];
+                if(curr > prev):
+                    argmax = c
+                    prev = curr
+
+            print("Test data : ",sentence)
+            print('Class : ',argmax)
+
+            return argmax
+
+        else:
+            print("No model!")
+
+        return False
+
     def testclassification(self,model,testdata,actualclas=''):
         testdata_token = testdata.split(" ")
         classify = {}
@@ -143,7 +157,11 @@ class NaiveBayes():
         print("Test data : ",testdata)
         print('Classification : ',argmax)
 
-        return True
+        if actualclas:
+            if actualclas == argmax:
+                return True
+
+        return False
 
     def testclassificationDataframe(self,model,testdataframe):
         countfalse = 0
