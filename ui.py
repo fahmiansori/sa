@@ -8,9 +8,7 @@
 
 # CHECK POINT >> Add checker for abbreviation words! Then add to DB!
 # NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
-# CHECK POINT >>>>> progress bar preprocessing
 # CHECK POINT >>>>> Error check in DB. > isRootWordDB[preprocessing.py]
-# CHECK POINT >>>>> Disable button while on process to avoid frezee, and enable again after process is complete
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app import App
@@ -699,6 +697,8 @@ class Ui_MainWindow(object):
 
 # tab setup
     def buttonConnectDb(self):
+        self.pushButton_setup_connect.setEnabled(False)
+        self.comboBox_setup_table.clear()
         host = self.lineEdit_setup_host.text()
         user = self.lineEdit_setup_user.text()
         password = self.lineEdit_setup_password.text()
@@ -711,6 +711,7 @@ class Ui_MainWindow(object):
         else:
             pass
         self.label_setup_status_connect.setText(connectStatus['msg'])
+        self.pushButton_setup_connect.setEnabled(True)
 
     def setupCheckTrainingTable(self):
         if self.app.con != None:
@@ -856,6 +857,7 @@ class Ui_MainWindow(object):
         self.lineEdit_fixword_wordfix.setText(data[0][2])
 
     def fixWordSave(self):
+        self.pushButton_fixword_save.setEnabled(False)
         if self.fixWord_idData == 0:
             print("No data selected!")
         elif not self.lineEdit_fixword_wordfix.text():
@@ -870,6 +872,7 @@ class Ui_MainWindow(object):
             self.lineEdit_fixword_wordfix.setText("")
             self.fixWord_idData = 0
             print("Saved")
+        self.pushButton_fixword_save.setEnabled(True)
 
     def fixWordBack(self):
         self.tabWidget.setCurrentIndex(0)
@@ -899,6 +902,8 @@ class Ui_MainWindow(object):
             self.lineEdit_preprocessing_threshold.setEnabled(True)
 
     def preprocessProcess(self):
+        self.progressBar_preprocessing.setValue(0)
+        self.pushButton_preprocessing_process.setEnabled(False)
         if self.preprocessing_doFeatureSelection:
             if self.lineEdit_preprocessing_numberoffeature.text():
                 self.preprocessing_numFeatureToRetain = self.lineEdit_preprocessing_numberoffeature.text()
@@ -911,10 +916,11 @@ class Ui_MainWindow(object):
                 self.preprocessing_thresholdFeatureIgnore = 0
 
         start_time = time.time()
-        features = self.app.preprocessing(self.preprocessing_doPreprocessing,self.preprocessing_doFeatureSelection,self.preprocessing_numFeatureToRetain,self.preprocessing_thresholdFeatureIgnore)
+        features = self.app.preprocessing(self.preprocessing_doPreprocessing,self.preprocessing_doFeatureSelection,self.preprocessing_numFeatureToRetain,self.preprocessing_thresholdFeatureIgnore,self.progressBar_preprocessing)
         self.preprocessing_time = time.time() - start_time
 
         self.preprocessTable(self.gridLayout_13,features)
+        self.pushButton_preprocessing_process.setEnabled(True)
 
     def preprocessTable(self,lay,features):
         import sip
@@ -1035,6 +1041,7 @@ class Ui_MainWindow(object):
 
 #tab training
     def trainingData(self):
+        self.pushButton_training.setEnabled(False)
         if self.vsmFeature is not None:
             start_time = time.time()
             self.label_training_status.setText("Training data ... Please wait ...")
@@ -1063,8 +1070,10 @@ class Ui_MainWindow(object):
                 self.groupBox_training_eval.setEnabled(False)
         else:
             print("No training data loaded!")
+        self.pushButton_training.setEnabled(True)
 
     def trainingTestEvalKFold(self):
+        self.pushButton_training_test.setEnabled(False)
         folds = self.lineEdit_training_fold.text()
         if not folds:
             folds = self.trainingFold_def
@@ -1080,14 +1089,18 @@ class Ui_MainWindow(object):
                 self.label_training_accuration.setText(str(eval['accuration']))
                 self.label_training_precision.setText(str(eval['precision']))
                 self.label_training_recall.setText(str(eval['recall']))
+        self.pushButton_training_test.setEnabled(True)
 
     def trainingTestSentence(self):
+        self.pushButton_training_test_sentence.setEnabled(False)
         sentence = self.lineEdit_training_sentence.text()
         if sentence and self.model is not None:
-            c = self.app.classificator.classifyWithModel(self.model,sentence)
+            # c = self.app.classificator.classifyWithModel(self.model,sentence)
+            c = self.app.evalSentence(self.model,sentence)
             self.label_training_result_test_sentence.setText("Result class : {0}".format(str(c)))
         else:
             print("No sentence or no model found!")
+        self.pushButton_training_test_sentence.setEnabled(True)
 
     def trainingBack(self):
         self.tabWidget.setCurrentIndex(2)

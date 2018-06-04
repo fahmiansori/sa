@@ -5,9 +5,9 @@ from math import log10
 from preprocessing import Preprocessing
 
 class NaiveBayes():
-    def __init__(self):
+    def __init__(self,con=None):
         self.model = None
-        self.preprocess = Preprocessing()
+        # self.preprocess = Preprocessing()
 
     def builtmodel(self,data,colclas='clas'):
         # data = data['vsm']
@@ -67,9 +67,11 @@ class NaiveBayes():
             return model
         return False
 
-    def classify(self,sentence):
+    def classify(self,sentence,preprocess=None):
         if self.model != None:
-            sentence = self.preprocess.process(sentence)
+            if preprocess is None:
+                preprocess = Preprocessing()
+            sentence = preprocess.process(sentence)
             sentence_split = sentence.split(" ")
 
             clas = {}
@@ -100,9 +102,11 @@ class NaiveBayes():
 
         return False
 
-    def classifyWithModel(self,model,sentence):
+    def classifyWithModel(self,model,sentence,preprocess=None):
         if model != None:
-            sentence = self.preprocess.process(sentence)
+            if preprocess is None:
+                preprocess = Preprocessing()
+            sentence = preprocess.process(sentence)
             sentence_split = sentence.split(" ")
 
             clas = {}
@@ -208,10 +212,10 @@ class NaiveBayes():
             confusionMatrix[actualclas][argmax]+=1
 
             # print("Test data : ",row[text_col])
-            # print('Classification : ',argmax,', Actual class : ',actualclas)
+            print('Classification : ',argmax,', Actual class : ',actualclas)
 
-        # print("Confusion Matrix")
-        # print(confusionMatrix)
+        print("Confusion Matrix")
+        print(confusionMatrix)
         for c in model['clas']: # > actual class kebawah
             for cc in model['clas']: # > prediction kesamping kanan
                 if cc == c:
@@ -230,22 +234,41 @@ class NaiveBayes():
         avg_precision = 0
         recall = 0
         avg_recall = 0
+
+        # for c in model['clas']:
+        #     # print("tp",c,">",tp[c],"fp",c,">",fp[c],"fn",c,">",fn[c])
+        #     accuration += tp[c]
+        #     try:
+        #         precision = tp[c]/(tp[c]+fp[c])
+        #     except:
+        #         precision = 0
+        #     avg_precision += precision
+        #     try:
+        #         recall = tp[c]/(tp[c]+fn[c])
+        #     except:
+        #         recall = 0
+        #     avg_recall += recall
+        # accuration = accuration/totaldata
+        # avg_precision = avg_precision/totalclas
+        # avg_recall = avg_recall/totalclas
+
+        sumTp = 0
         for c in model['clas']:
             # print("tp",c,">",tp[c],"fp",c,">",fp[c],"fn",c,">",fn[c])
-            accuration += tp[c]
-            try:
-                precision = tp[c]/(tp[c]+fp[c])
-            except:
-                precision = 0
-            avg_precision += precision
-            try:
-                recall = tp[c]/(tp[c]+fn[c])
-            except:
-                recall = 0
-            avg_recall += recall
-        accuration = accuration/totaldata
-        avg_precision = avg_precision/totalclas
-        avg_recall = avg_recall/totalclas
+            accuration += (tp[c]+tn[c])/(tp[c]+tn[c]+fp[c]+fn[c])
+            sumTp += tp[c]
+            precision = tp[c]+fp[c]
+            recall = tp[c]+fn[c]
+        accuration = accuration/totalclas
+        try:
+            avg_precision = sumTp/precision
+        except:
+            avg_precision = 0
+        try:
+            avg_recall = sumTp/recall
+        except:
+            avg_recall = 0
+
         ret = {}
         ret['accuration'] = accuration
         ret['precision'] = avg_precision

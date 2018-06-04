@@ -26,6 +26,7 @@ from classificator import Vsm
 from feature_selection import InfoGain
 from db import Database
 from math import floor
+import time
 
 class App():
     def __init__(self):
@@ -89,16 +90,19 @@ class App():
             vsm = f.run(vsm,take_feature=take_feature,threshold=threshold,exceptional_feature=self.exceptional_feature,colclas=self.class_col)
         return vsm
 
-    def preprocessing(self,doPreprocessing,doFeatureSelection,take_feature,threshold):
+    def preprocessing(self,doPreprocessing,doFeatureSelection,take_feature,threshold,progress):
         features = None
         if self.con != None:
             if self.training_table:
                 self.dataTraining = self.con.getDataAsDF(self.training_table)
+                progress.setValue(10)
                 if self.dataTraining is not None:
-                    p = Preprocessing()
+                    p = Preprocessing(con=self.con)
                     uniqFeature = []
                     features = {}
                     originalFeatureCount = 0
+                    progressP = 10
+                    progressS = (70-progressP)/len(self.dataTraining.index)
                     for index,row in self.dataTraining.iterrows():
                         text = row[self.text_col]
                         t = p.processNoPre(text).split(" ") # bad performance
@@ -111,13 +115,19 @@ class App():
                         # print("Ori : ",text)
                         # print("Preprocessed : ",pretext," -> ",row[self.class_col])
                         self.dataTraining.at[index,self.text_col] = pretext
+                        progressP+=progressS
+                        progress.setValue(progressP)
+                        # time.sleep(0.5)
+                    progress.setValue(70)
                     uniqFeature = set(uniqFeature) # bad performance
                     features['featurebefore'] = len(uniqFeature) # bad performance
+                    progress.setValue(80)
 
                     features['vsm'] = self.builtVSM(doFeatureSelection,take_feature,threshold)
-
+                    progress.setValue(90)
             else:
                 print("No training table!")
+        progress.setValue(100)
 
         return features
 
@@ -148,6 +158,9 @@ class App():
             ret['totaltrainingdataperclas'] = tdpc
             return ret
         return False
+
+    def evalSentence(self,model,sentence):
+        return self.classificator.classifyWithModel(model,sentence,Preprocessing(con=self.con))
 
     def evalKFoldCV(self,totaltrainingdata,folds):
         if self.dataTraining is not None:
@@ -197,10 +210,11 @@ class App():
                 avg_accuration += i['accuration']
                 avg_precision += i['precision']
                 avg_recall += i['recall']
-            er = len(evalResults)
-            avg_accuration = avg_accuration/er
-            avg_precision = avg_precision/er
-            avg_recall = avg_recall/er
+            if len(evalResults) > 0:
+                er = len(evalResults)
+                avg_accuration = avg_accuration/er
+                avg_precision = avg_precision/er
+                avg_recall = avg_recall/er
             ret = {}
             ret['accuration'] = float(format(avg_accuration,'.2f'))
             ret['precision'] = float(format(avg_precision,'.2f'))

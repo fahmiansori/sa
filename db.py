@@ -71,6 +71,22 @@ class Database():
 
         return rows
 
+    def queryWithRowCount(self,query):
+        rows = None
+        if self.con != None:
+            cursor = self.con.cursor()
+            rows = {}
+            try:
+                cursor.execute(query)
+                row = cursor.fetchall()
+                rows['rows'] = row
+                rows['count'] = cursor.rowcount
+            except pymysql.MySQLError as e:
+                # print("Error retrieving tables")
+                print('Got error {!r}, errno is {}'.format(e, e.args[0]))
+
+        return rows
+
     def queryWithError(self,query):
         rows = None
         errorcode = 0
@@ -97,9 +113,12 @@ class Database():
                 cursor.execute(query)
                 self.con.commit()
                 # con.close()
+                return True
             except pymysql.MySQLError as e:
-                print("Error retrieving tables")
                 print('Got error {!r}, errno is {}'.format(e, e.args[0]))
+            except:
+                print("Unknow error!")
+        return False
 
     def getDataAsDF(self,table,col='*',cond=''):
         if self.con != None:

@@ -5,20 +5,28 @@ from stemmer import ECSP
 
 
 class Preprocessing():
-    def __init__(self,keyword=[]):
+    def __init__(self,con=None,keyword=[]):
         self.stemmer = ECSP()
         self.keyword = keyword
-        self.con = pymysql.connect(host='localhost', user='root', passwd='', database='sentiment_analysis',charset='utf8')
-        cursor = self.con.cursor()
         sql = "SELECT * from fix_word"
-        cursor.execute(sql)
-        unfixWord = cursor.fetchall()
-        self.fixedWords = []
-        self.unfixedWords = []
-        for i in unfixWord:
-            self.unfixedWords.append(i[1])
-            self.fixedWords.append(i[2])
-        # print(self.unfixedWords)
+        self.con = None
+        if con is not None:
+            self.con = con
+            unfixWord = self.con.query(sql)
+        # else:
+        #     self.con = pymysql.connect(host='localhost', user='root', passwd='', database='sentiment_analysis',charset='utf8')
+        #     cursor = self.con.cursor()
+        #     cursor.execute(sql)
+        #     unfixWord = cursor.fetchall()
+        if self.con is not None:
+            self.fixedWords = []
+            self.unfixedWords = []
+            for i in unfixWord:
+                self.unfixedWords.append(i[1])
+                self.fixedWords.append(i[2])
+            # print(self.unfixedWords)
+        else:
+            print("No connection!")
 
     def removesymbol(self,text):
         cleantext = text
@@ -60,18 +68,13 @@ class Preprocessing():
         return cleantext
 
     def isRootWordDB(self,text):
-        cursor = self.con.cursor()
-        sql = "SELECT id from root_word where rootword=%s"
-        try:
-            cursor.execute(sql,text)
-            # result = cursor.fetchall()
-            count = cursor.rowcount
-            if count < 1:
+        sql = "SELECT id_rootword from root_word where rootword='{0}'"
+        if self.con is not None:
+            row = self.con.queryWithRowCount(sql.format(text))
+            if row is not None and row['count'] < 1:
                 return False
-            cursor.close()
-        except :
-            print("Error check in DB. > isRootWordDB[preprocessing.py]")
-
+        else:
+            print("No connection![isRootWordDB]")
         return True
 
     def checkWord(self,text):
@@ -83,17 +86,14 @@ class Preprocessing():
                     abbreviation_word = self.fixedWords[indexWord]
             else:
                 # if not self.isRootWordDB(abbreviation_word):
-                cursor = self.con.cursor()
-                sqlinsert = "INSERT into fix_word set word='"+abbreviation_word+"'"
-                try:
-                    cursor.execute(sqlinsert)
-                    print("Insert : Success")
-                # except:
-                except pymysql.InternalError:
-                    print("Insert : Failed")
-                    # print("Error in insert")
-                cursor.close()
-                self.con.commit()
+                sqlinsert = "INSERT into fix_word set word='{0}'"
+                if self.con is not None:
+                    if self.con.queryInsert(sqlinsert.format(abbreviation_word)):
+                        print("Insert : Success")
+                    else:
+                        print("Insert : Failed")
+                else:
+                    print("No connection![checkWord]")
             # print(abbreviation_word)
 
         return abbreviation_word
