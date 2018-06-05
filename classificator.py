@@ -209,70 +209,97 @@ class NaiveBayes():
                     argmax = c
                 prev = curr
 
-            confusionMatrix[actualclas][argmax]+=1
+            # confusionMatrix[actualclas][argmax]+=1 # >> left = actual class, top = prediction
+            confusionMatrix[argmax][actualclas]+=1 # >> left = prediction, top = actual class
 
             # print("Test data : ",row[text_col])
             print('Classification : ',argmax,', Actual class : ',actualclas)
 
         print("Confusion Matrix")
         print(confusionMatrix)
-        for c in model['clas']: # > actual class kebawah
-            for cc in model['clas']: # > prediction kesamping kanan
-                if cc == c:
-                    tp[c] += confusionMatrix[c][cc]
-                else:
-                    fp[cc] += confusionMatrix[c][cc]
-                    fn[c] += confusionMatrix[c][cc]
-
-                for ccc in model['clas']:
-                    if ccc != c and cc != c:
-                        tn[c] += confusionMatrix[cc][ccc]
 
         totalclas = len(model['clas'])
         accuration = 0
         precision = 0
-        avg_precision = 0
         recall = 0
-        avg_recall = 0
 
-        # for c in model['clas']:
-        #     # print("tp",c,">",tp[c],"fp",c,">",fp[c],"fn",c,">",fn[c])
-        #     accuration += tp[c]
-        #     try:
-        #         precision = tp[c]/(tp[c]+fp[c])
-        #     except:
-        #         precision = 0
-        #     avg_precision += precision
-        #     try:
-        #         recall = tp[c]/(tp[c]+fn[c])
-        #     except:
-        #         recall = 0
-        #     avg_recall += recall
-        # accuration = accuration/totaldata
-        # avg_precision = avg_precision/totalclas
-        # avg_recall = avg_recall/totalclas
+        if totalclas > 2:
+            for c in model['clas']: # > prediction kebawah (tergantung atas,opt=2)
+                for cc in model['clas']: # > actual class kesamping kanan (tergantung atas,opt=2)
+                    if cc == c:
+                        tp[c] += confusionMatrix[c][cc]
+                    else:
+                        # jika axis prediction dan actual dirubah, ini juga ikut  berubah
+                        fp[c] += confusionMatrix[c][cc] # acuan dari prediction axis
+                        fn[cc] += confusionMatrix[c][cc] # acuan dari actual axis
 
-        sumTp = 0
-        for c in model['clas']:
-            # print("tp",c,">",tp[c],"fp",c,">",fp[c],"fn",c,">",fn[c])
-            accuration += (tp[c]+tn[c])/(tp[c]+tn[c]+fp[c]+fn[c])
-            sumTp += tp[c]
-            precision = tp[c]+fp[c]
-            recall = tp[c]+fn[c]
-        accuration = accuration/totalclas
-        try:
-            avg_precision = sumTp/precision
-        except:
-            avg_precision = 0
-        try:
-            avg_recall = sumTp/recall
-        except:
-            avg_recall = 0
+                    for ccc in model['clas']:
+                        if ccc != c and cc != c:
+                            tn[c] += confusionMatrix[cc][ccc]
+
+            for c in model['clas']:
+                print(c,"\t",end='')
+                for cc in model['clas']:
+                    print("\t",confusionMatrix[c][cc],end='')
+                print("")
+
+            for c in model['clas']:
+                print("tp[c]",c)
+                print(tp[c])
+                print("fp[c]",c)
+                print(fp[c])
+                print("fn[c]",c)
+                print(fn[c])
+                print("tn[c]",c)
+                print(tn[c])
+
+            sumTp = 0
+            for c in model['clas']:
+                # print("tp",c,">",tp[c],"fp",c,">",fp[c],"fn",c,">",fn[c])
+                accuration += (tp[c]+tn[c])/(tp[c]+tn[c]+fp[c]+fn[c])
+                sumTp += tp[c]
+                precision = tp[c]+fp[c]
+                recall = tp[c]+fn[c]
+            accuration = accuration/totalclas
+            print("sumTp")
+            print(sumTp)
+            print("precision")
+            print(precision)
+            print("recall")
+            print(recall)
+            try:
+                precision = sumTp/precision
+            except:
+                precision = 0
+            try:
+                recall = sumTp/recall
+            except:
+                recall = 0
+        else:
+            if totalclas == 2:
+                # jika axis prediction dan actual dirubah, ini juga ikut  berubah
+                tp = confusionMatrix[model['clas'][0]][model['clas'][0]]
+                fn = confusionMatrix[model['clas'][1]][model['clas'][0]]
+                fp = confusionMatrix[model['clas'][0]][model['clas'][1]]
+                tn = confusionMatrix[model['clas'][1]][model['clas'][1]]
+
+                accuration = (tp+tn)/(tp+tn+fp+fn)
+                precision = tp/(fp+tp)
+                recall = tp/(fn+tp)
+            else:
+                pass
+
+        print("accuration")
+        print(accuration)
+        print("precision")
+        print(precision)
+        print("recall")
+        print(recall)
 
         ret = {}
         ret['accuration'] = accuration
-        ret['precision'] = avg_precision
-        ret['recall'] = avg_recall
+        ret['precision'] = precision
+        ret['recall'] = recall
 
         return ret
 
