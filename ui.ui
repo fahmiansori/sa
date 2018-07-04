@@ -1200,12 +1200,10 @@
           <zorder>label_22</zorder>
           <zorder>horizontalSpacer_24</zorder>
           <zorder>horizontalSpacer_25</zorder>
-          <zorder>gridLayoutWidget</zorder>
           <zorder>horizontalSpacer_20</zorder>
           <zorder>horizontalSpacer_19</zorder>
           <zorder>horizontalSpacer_26</zorder>
           <zorder>horizontalSpacer_27</zorder>
-          <zorder>gridLayoutWidget_2</zorder>
          </widget>
         </item>
        </layout>
@@ -1235,7 +1233,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

@@ -2,19 +2,23 @@ import math
 import pandas as pd
 
 class InfoGain():
-    def entropy(self,data,s,totaldata=0,totalalldata=0,col=''):
+    def entropy(self,data,s,totaldata=0,totalalldata=0,col='',qc=None):
         attrs = data
         if col:
             attrs = data[col]
         if totaldata == 0:
             for c in attrs:
                 totaldata+=s[c]
+                if qc:
+                    qc.processEvents()
         i = 0
         for attr in attrs:
             try:
                 i+=(-s[attr]/totaldata)*math.log2(s[attr]/totaldata)
             except:
                 i+=0
+            if qc:
+                qc.processEvents()
         # print(i)
 
         # try:
@@ -29,26 +33,30 @@ class InfoGain():
         en = {'i':i,'prob':prob}
         return en
 
-    def gain(self,S,clas,totaldata,s):
-        entropyClass = self.entropy(clas,s)
+    def gain(self,S,clas,totaldata,s,qc=None):
+        entropyClass = self.entropy(clas,s,qc=qc)
 
         igSubset = {}
         for subset in S:
             ig = 0
             for categoryVal in S[subset]:
-                en = self.entropy(clas,S[subset][categoryVal],totalalldata=totaldata)
+                en = self.entropy(clas,S[subset][categoryVal],totalalldata=totaldata,qc=qc)
                 # print('entropy',subset,category,':',en)
                 ig += (en['prob']*en['i'])
+                if qc:
+                    qc.processEvents()
             ig = entropyClass['i'] - ig
             # print('information gain',subset,':',ig)
             igSubset[subset] = ig
+            if qc:
+                qc.processEvents()
 
         # so = sorted(igSubset,key=igSubset.__getitem__,reverse=True)
         # for i in so:
         #     print(i,":",igSubset[i])
         return igSubset
 
-    def run(self,data,take_feature=0,threshold=0,exceptional_feature=[],colclas='clas'):
+    def run(self,data,take_feature=0,threshold=0,exceptional_feature=[],colclas='clas',qc=None):
         cols = []
         take_feature=int(take_feature)
         threshold=float(threshold)
@@ -67,6 +75,8 @@ class InfoGain():
             for i in columns:
                 if i not in exceptional_feature:
                     cols.append(i)
+                if qc:
+                    qc.processEvents()
 
             S = {}
             for i in cols:
@@ -77,6 +87,11 @@ class InfoGain():
                     for j in dataframe.loc[dataframe[colclas]==c,i]:
                         if j > 0:
                             c_count[c] += 1
+                        if qc:
+                            qc.processEvents()
+                    if qc:
+                        qc.processEvents()
+
                 category['1'] = c_count # >> Karena hanya ada 2 kategori yg dipakai untuk kasus ini, yaitu muncul atau tidak, 1 untuk muncul
 
                 c_count = {}
@@ -85,6 +100,10 @@ class InfoGain():
                     for j in dataframe.loc[dataframe[colclas]==c,i]:
                         if j < 1:
                             c_count[c] += 1
+                        if qc:
+                            qc.processEvents()
+                    if qc:
+                        qc.processEvents()
                 category['0'] = c_count # >> Karena hanya ada 2 kategori yg dipakai untuk kasus ini, yaitu muncul atau tidak, 0 untuk ketidakmunculan
                 S[i] = category
                 # break
@@ -92,8 +111,10 @@ class InfoGain():
             ss = {}
             for c in clas:
                 ss[c] = dataframe[colclas].where(dataframe[colclas]==c).count()
+                if qc:
+                    qc.processEvents()
             s = ss
-            igSubset = self.gain(S,clas,totaldata,ss)
+            igSubset = self.gain(S,clas,totaldata,ss,qc=qc)
 
             so = sorted(igSubset,key=igSubset.__getitem__,reverse=True)
             num = 1
@@ -111,10 +132,14 @@ class InfoGain():
                 else:
                     feature_to_delete.append(i)
                 num+=1
+                if qc:
+                    qc.processEvents()
             columnlen = len(column)
             if len(feature_to_delete) > 0:
                 for i in feature_to_delete:
                     dataframe.drop(i,axis=1,inplace=True) # axis = 1->kolom,0->rows,inplace=True->no asignment
+                    if qc:
+                        qc.processEvents()
 
             vs_model = {'vsm':dataframe,'column':column,'columnlen':columnlen,'feature':featureDf}
             return vs_model

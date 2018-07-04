@@ -28,6 +28,19 @@ from db import Database
 from math import floor
 import time
 
+######################################
+# NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
+# Cari cara membedakan nama (pulau, tempat, dll) pada proses stemming
+# Pada stemmer, terdapat kondisi stem yang mempunyai 2 removal, cari cara untuk membedakan #6,13,15,17,21,25,27,29,30
+# Hilangkan karakter berlebihan, misal jaaaauuuhhh -> jauh
+# ganti koneksi, sekali query hanya satu koneksi, setelah operasi selesai maka koneksi ditutup
+# threshold ganti ke -1 pada seleksi fitur
+# perbaiki layout tabel & tambah caption di eval serta detail waktu eksekusi eval
+# optimasi for loop, cari penggantinya
+# cek stopword list di preprocessing,
+# [optional] implementasi multiprocessing
+######################################
+
 class App():
     def __init__(self):
         self.db = ""
@@ -79,18 +92,18 @@ class App():
     def setTextCol(self,col):
         self.text_col = col
 
-    def builtVSM(self,doFeatureSelection,take_feature,threshold,dataTraining=None):
+    def builtVSM(self,doFeatureSelection,take_feature,threshold,dataTraining=None,qc=None):
         if dataTraining is None:
             dataTraining = self.dataTraining
 
         v = Vsm()
-        vsm = v.vsm(dataTraining,exceptional_feature=self.exceptional_feature,coltext=self.text_col,colclass=self.class_col)
+        vsm = v.vsm(dataTraining,exceptional_feature=self.exceptional_feature,coltext=self.text_col,colclass=self.class_col,qc=qc)
         if doFeatureSelection:
             f = InfoGain()
-            vsm = f.run(vsm,take_feature=take_feature,threshold=threshold,exceptional_feature=self.exceptional_feature,colclas=self.class_col)
+            vsm = f.run(vsm,take_feature=take_feature,threshold=threshold,exceptional_feature=self.exceptional_feature,colclas=self.class_col,qc=qc)
         return vsm
 
-    def preprocessing(self,doPreprocessing,doFeatureSelection,take_feature,threshold,progress):
+    def preprocessing(self,doPreprocessing,doFeatureSelection,take_feature,threshold,progress,qc):
         features = None
         if self.con != None:
             if self.training_table:
@@ -118,12 +131,16 @@ class App():
                         progressP+=progressS
                         progress.setValue(progressP)
                         # time.sleep(0.5)
+                        qc.processEvents()
                     progress.setValue(70)
+                    qc.processEvents()
                     uniqFeature = set(uniqFeature) # bad performance
+                    qc.processEvents()
                     features['featurebefore'] = len(uniqFeature) # bad performance
+                    qc.processEvents()
                     progress.setValue(80)
 
-                    features['vsm'] = self.builtVSM(doFeatureSelection,take_feature,threshold)
+                    features['vsm'] = self.builtVSM(doFeatureSelection,take_feature,threshold,qc=qc)
                     progress.setValue(90)
             else:
                 print("No training table!")
@@ -131,15 +148,15 @@ class App():
 
         return features
 
-    def trainingClassificator(self,vsm):
+    def trainingClassificator(self,vsm,qc=None):
         self.classificator = NaiveBayes()
         vsm = vsm['vsm']
-        model = self.classificator.builtmodel(vsm)
+        model = self.classificator.builtmodel(vsm,qc=qc)
         return model
 
-    def trainingClassificatorEval(self,vsm):
+    def trainingClassificatorEval(self,vsm,qc=None):
         classificator = NaiveBayes()
-        classificator.builtmodel(vsm)
+        classificator.builtmodel(vsm,qc=qc)
         return classificator
 
     def getDataTrainingProperty(self,clas):
@@ -162,13 +179,15 @@ class App():
     def evalSentence(self,model,sentence):
         return self.classificator.classifyWithModel(model,sentence,Preprocessing(con=self.con))
 
-    def evalKFoldCV(self,totaltrainingdata,folds):
+    def evalKFoldCV(self,totaltrainingdata,folds,vsm=None,qc=None):
         if self.dataTraining is not None:
             dataLeft = totaltrainingdata%folds
             dataPerFold = floor(totaltrainingdata/folds)
             dataIndexFolds = []
             foldPos = 1
             dataPos = 1
+            if qc:
+                qc.processEvents()
             for i in range(totaltrainingdata):
                 if dataPos == 1:
                     newFold = []
@@ -182,12 +201,16 @@ class App():
                     foldPos+=1
                 if foldPos > folds:
                     break
+                if qc:
+                    qc.processEvents()
 
             if dataLeft > 0:
                 indexToAdd = 0
                 for i in range((totaltrainingdata-dataLeft),totaltrainingdata):
                     dataIndexFolds[indexToAdd].append(i)
                     indexToAdd+=1
+                    if qc:
+                        qc.processEvents()
 
             evalResults = []
             for i in range(folds):
@@ -197,11 +220,18 @@ class App():
                 trainingDataList = []
                 for j in dataIndexFolds_copy:
                     trainingDataList.extend(j)
+                    if qc:
+                        qc.processEvents()
                 trainingData = self.dataTraining.iloc[trainingDataList]
-                vsmTraining = self.builtVSM(False,0,0,dataTraining=trainingData)
-                model = self.trainingClassificatorEval(vsmTraining)
-                evalResult = model.testclassificationDataframe(testData,self.text_col,self.class_col)
+                if vsm:
+                    vsmTraining = vsm
+                else:
+                    vsmTraining = self.builtVSM(False,0,0,dataTraining=trainingData)
+                model = self.trainingClassificatorEval(vsmTraining,qc=qc)
+                evalResult = model.testclassificationDataframe(testData,self.text_col,self.class_col,qc=qc)
                 evalResults.append(evalResult)
+                if qc:
+                    qc.processEvents()
 
             avg_accuration = 0
             avg_precision = 0
@@ -210,13 +240,15 @@ class App():
                 avg_accuration += i['accuration']
                 avg_precision += i['precision']
                 avg_recall += i['recall']
+                if qc:
+                    qc.processEvents()
             if len(evalResults) > 0:
                 er = len(evalResults)
                 avg_accuration = avg_accuration/er
                 avg_precision = avg_precision/er
                 avg_recall = avg_recall/er
             ret = {}
-            ret['accuration'] = float(format(avg_accuration,'.2f'))
+            ret['accuration'] = float(format(avg_accuration,'.2f'))*100
             ret['precision'] = float(format(avg_precision,'.2f'))
             ret['recall'] = float(format(avg_recall,'.2f'))
 

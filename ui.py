@@ -6,10 +6,6 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-# CHECK POINT >> Add checker for abbreviation words! Then add to DB!
-# NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
-# CHECK POINT >>>>> Error check in DB. > isRootWordDB[preprocessing.py]
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 from app import App
 import re
@@ -40,6 +36,7 @@ class Ui_MainWindow(object):
         self.preprocessing_numFeatureToRetain = 0
         self.preprocessing_thresholdFeatureIgnore = 0
         self.vsmFeature = None
+        self.vsm = None
         self.preprocessing_time = 0
 
         # tab training
@@ -57,6 +54,8 @@ class Ui_MainWindow(object):
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.tabWidget.setToolTip("")
         self.tabWidget.setObjectName("tabWidget")
+
+        #tab setup
         self.tab_setup = QtWidgets.QWidget()
         self.tab_setup.setObjectName("tab_setup")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.tab_setup)
@@ -160,6 +159,8 @@ class Ui_MainWindow(object):
         self.gridLayout_4.addLayout(self.horizontalLayout, 5, 1, 1, 1)
         self.gridLayout_3.addWidget(self.groupBox, 0, 0, 1, 2)
         self.tabWidget.addTab(self.tab_setup, "")
+
+        #tab fix word
         self.tab_fix_word = QtWidgets.QWidget()
         self.tab_fix_word.setObjectName("tab_fix_word")
         self.gridLayout_7 = QtWidgets.QGridLayout(self.tab_fix_word)
@@ -200,6 +201,7 @@ class Ui_MainWindow(object):
         self.pushButton_fixword_back.setObjectName("pushButton_fixword_back")
         self.gridLayout_7.addWidget(self.pushButton_fixword_back, 4, 3, 1, 1)
         self.tabWidget.addTab(self.tab_fix_word, "")
+
         self.tab_preprocessing = QtWidgets.QWidget()
         self.tab_preprocessing.setObjectName("tab_preprocessing")
         self.gridLayout_11 = QtWidgets.QGridLayout(self.tab_preprocessing)
@@ -322,6 +324,7 @@ class Ui_MainWindow(object):
         self.pushButton_preprocessing_back.setObjectName("pushButton_preprocessing_back")
         self.gridLayout_11.addWidget(self.pushButton_preprocessing_back, 2, 1, 1, 1)
         self.tabWidget.addTab(self.tab_preprocessing, "")
+
         self.tab_training = QtWidgets.QWidget()
         self.tab_training.setObjectName("tab_training")
         self.gridLayout_15 = QtWidgets.QGridLayout(self.tab_training)
@@ -494,11 +497,13 @@ class Ui_MainWindow(object):
         self.label_22.raise_()
         self.gridLayout_15.addWidget(self.groupBox_training_eval, 1, 0, 1, 3)
         self.tabWidget.addTab(self.tab_training, "")
+
         self.tab_analysis = QtWidgets.QWidget()
         self.tab_analysis.setObjectName("tab_analysis")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.tab_analysis)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.tabWidget.addTab(self.tab_analysis, "")
+
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -916,7 +921,9 @@ class Ui_MainWindow(object):
                 self.preprocessing_thresholdFeatureIgnore = 0
 
         start_time = time.time()
-        features = self.app.preprocessing(self.preprocessing_doPreprocessing,self.preprocessing_doFeatureSelection,self.preprocessing_numFeatureToRetain,self.preprocessing_thresholdFeatureIgnore,self.progressBar_preprocessing)
+        qc = QtCore.QCoreApplication
+        features = self.app.preprocessing(self.preprocessing_doPreprocessing,self.preprocessing_doFeatureSelection,self.preprocessing_numFeatureToRetain,self.preprocessing_thresholdFeatureIgnore,self.progressBar_preprocessing,qc)
+        self.vsm = features['vsm']
         self.preprocessing_time = time.time() - start_time
 
         self.preprocessTable(self.gridLayout_13,features)
@@ -962,9 +969,7 @@ class Ui_MainWindow(object):
             if totalFeatureBefore != 0:
                 reduction = totalFeatureAfter/totalFeatureBefore*100 # rumus masih salah
                 reduction = round(100-reduction) # rumus masih salah
-            self.label_preprocessing_feature_before.setText(str(totalFeatureBefore))
-            self.label_preprocessing_feature_after.setText(str(totalFeatureAfter))
-            self.label_preprocessing_feature_reduction.setText(str(reduction))
+            self.label_preprocessing_feature_before.setText("Creating table ... Please wait ...")
 
         #for table feature
         self.tableWidget_preprocessing_features_list_after = QtWidgets.QTableWidget(rowCount, colCount)
@@ -1008,6 +1013,8 @@ class Ui_MainWindow(object):
                     item = QtWidgets.QTableWidgetItem(str(feat))
                     self.tableWidget_preprocessing_features_list_after.setItem(index, jj, item)
                     jj+=1
+                    QtCore.QCoreApplication.processEvents()
+                QtCore.QCoreApplication.processEvents()
 
             for index,row in vsm.iterrows():
                 jj = 0
@@ -1016,8 +1023,13 @@ class Ui_MainWindow(object):
                     item = QtWidgets.QTableWidgetItem(str(feat))
                     self.tableWidget_preprocessing_vsm.setItem(index, jj, item)
                     jj+=1
+                    QtCore.QCoreApplication.processEvents()
+                QtCore.QCoreApplication.processEvents()
 
             # for button next, to process in training data
+            self.label_preprocessing_feature_before.setText(str(totalFeatureBefore))
+            self.label_preprocessing_feature_after.setText(str(totalFeatureAfter))
+            self.label_preprocessing_feature_reduction.setText(str(reduction))
             if len(vsm.index) > 0:
                 self.vsmFeature = features
                 self.tabWidget.setTabEnabled(3,True)
@@ -1045,7 +1057,9 @@ class Ui_MainWindow(object):
         if self.vsmFeature is not None:
             start_time = time.time()
             self.label_training_status.setText("Training data ... Please wait ...")
-            self.model = self.app.trainingClassificator(self.vsmFeature)
+            qc = QtCore.QCoreApplication
+            qc.processEvents()
+            self.model = self.app.trainingClassificator(self.vsmFeature,qc=qc)
             if self.model is not None:
                 featureprocessed = self.label_preprocessing_feature_after.text()
                 clas = self.model['clas']
@@ -1084,7 +1098,8 @@ class Ui_MainWindow(object):
         elif folds < 2:
             print("Cannot only 1 fold!!")
         else:
-            eval = self.app.evalKFoldCV(self.training_total_data,folds)
+            qc = QtCore.QCoreApplication
+            eval = self.app.evalKFoldCV(self.training_total_data,folds,self.vsm,qc=qc)
             if eval is not False:
                 self.label_training_accuration.setText(str(eval['accuration']))
                 self.label_training_precision.setText(str(eval['precision']))
