@@ -24,12 +24,13 @@ from preprocessing import Preprocessing
 from classificator import NaiveBayes
 from classificator import Vsm
 from feature_selection import InfoGain
+from stemmer import ECSP
 from db import Database
 from math import floor
 import time
+import re
 
 ######################################
-# NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
 # Cari cara membedakan nama (pulau, tempat, dll) pada proses stemming
 # Pada stemmer, terdapat kondisi stem yang mempunyai 2 removal, cari cara untuk membedakan #6,13,15,17,21,25,27,29,30
 # Hilangkan karakter berlebihan, misal jaaaauuuhhh -> jauh
@@ -39,6 +40,7 @@ import time
 # optimasi for loop, cari penggantinya
 # cek stopword list di preprocessing,
 # [optional] implementasi multiprocessing
+# NOTE : Check point > besok buat status bar bawah
 ######################################
 
 class App():
@@ -92,6 +94,71 @@ class App():
     def setTextCol(self,col):
         self.text_col = col
 
+    def removesymbol(self,text):
+        cleantext = text
+        cleantext = cleantext.lower()
+        url_pattern = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        # symbol_pattern = '[\[\]\(\)!@#$%^&*-+=_`~\{\}\\\/;:\'\"<>,.?]'
+        # allowonlyletternumber_pattern = "(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"
+        allowonlyletternumber_pattern = "(@[A-Za-z0-9]+)|(#[A-Za-z0-9]+)|([^A-Za-z \t])|(\w+:\/\/\S+)"
+        # allowonlyletter_pattern = "([^A-Za-z \t])|(\w+:\/\/\S+)"
+        cleantext = ' '.join(re.sub(allowonlyletternumber_pattern," ",cleantext).split())
+        cleantext = re.sub(url_pattern,'',cleantext)
+        cleantext = re.sub(r'\b\d+(?:\.\d+)?\s+','',cleantext)
+        # cleantext = re.sub(' +',' ',text) #hapus spasi berlebih
+        return cleantext
+
+    def isRootWordDB(self,text):
+        sql = "SELECT id_rootword from root_word where rootword='{0}'"
+        if self.con is not None:
+            row = self.con.queryWithRowCount(sql.format(text))
+            if row is not None and row['count'] < 1:
+                return False
+        else:
+            print("No connection![isRootWordDB]")
+        return True
+
+    def isWordExistDB(self,text):
+        sql = "SELECT id from fix_word where word='{0}'"
+        if self.con is not None:
+            row = self.con.queryWithRowCount(sql.format(text))
+            if row is not None and row['count'] < 1:
+                return False
+        else:
+            print("No connection![isWordExistDB]")
+        return True
+
+    def checkWord(self,text):
+        abbreviation_word = text
+        # if len(self.unfixedWords) > 0: # assume that word have no vocal character -> and re.search(r'^[^aeiou]+$',abbreviation_word)
+        if not self.isWordExistDB(abbreviation_word):
+            sqlinsert = "INSERT into fix_word set word='{0}'"
+            if self.con is not None:
+                if self.con.queryInsert(sqlinsert.format(abbreviation_word)):
+                    print("Insert : Success")
+                else:
+                    print("Insert : Failed")
+            else:
+                print("No connection![checkWord]")
+
+    def chekForUnidenChar(self,qc=None):
+        stemmer = ECSP()
+        self.dataTraining = self.con.getDataAsDF(self.training_table)
+        if self.dataTraining is not None:
+            for index,row in self.dataTraining.iterrows():
+                if qc:
+                    qc.processEvents()
+                text = row[self.text_col]
+                text = self.removesymbol(text)
+                textToken = text.split(" ")
+                for newtext in textToken:
+                    if stemmer.isSixChar(newtext) and not self.isRootWordDB(newtext):
+                        self.checkWord(newtext)
+                    if qc:
+                        qc.processEvents()
+                if qc:
+                    qc.processEvents()
+
     def builtVSM(self,doFeatureSelection,take_feature,threshold,dataTraining=None,qc=None):
         if dataTraining is None:
             dataTraining = self.dataTraining
@@ -107,10 +174,11 @@ class App():
         features = None
         if self.con != None:
             if self.training_table:
-                self.dataTraining = self.con.getDataAsDF(self.training_table)
+                # self.dataTraining = self.con.getDataAsDF(self.training_table)
                 progress.setValue(10)
                 if self.dataTraining is not None:
                     p = Preprocessing(con=self.con)
+                    oritext = None
                     uniqFeature = []
                     features = {}
                     originalFeatureCount = 0
@@ -118,13 +186,17 @@ class App():
                     progressS = (70-progressP)/len(self.dataTraining.index)
                     for index,row in self.dataTraining.iterrows():
                         text = row[self.text_col]
-                        t = p.processNoPre(text).split(" ") # bad performance
-                        uniqFeature.extend(t) # bad performance
 
                         if doPreprocessing:
                             pretext = p.process(text)
+                            oritext = pretext['oritext']
+                            pretext = pretext['stemmed_text']
                         else:
                             pretext = p.processNoPre(text)
+
+                        t = p.processNoPre(pretext).split(" ") # bad performance
+                        uniqFeature.extend(t) # bad performance
+
                         # print("Ori : ",text)
                         # print("Preprocessed : ",pretext," -> ",row[self.class_col])
                         self.dataTraining.at[index,self.text_col] = pretext
@@ -141,6 +213,7 @@ class App():
                     progress.setValue(80)
 
                     features['vsm'] = self.builtVSM(doFeatureSelection,take_feature,threshold,qc=qc)
+                    features['oritext'] = oritext
                     progress.setValue(90)
             else:
                 print("No training table!")

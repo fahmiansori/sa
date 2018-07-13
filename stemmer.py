@@ -65,6 +65,8 @@ class ECSP():
                 if re.search(r'^(di|ke|se)\S{1,}', term):
                     if re.search(r'^((se)[r]|(kera))\S{1,}', term):
                         pass
+                    elif re.search(r'^(seks|semangat|sempit|senonoh|diskusi)\S{1,}', term):
+                        pass
                     elif re.search(r'^(ke)[c]\S{1,}', term):
                         pass
                     else:
@@ -75,7 +77,7 @@ class ECSP():
                     # term = re.sub(r'^se','', term)#???
                 # 5.2. hapus awalan bermofologi
                 if re.search(r'^(be|te|pe|me)\S{1,}', term): # modifikasi [^km]
-                    if re.search(r'^(me)(?!ng)\S{1,}', term) and re.search(r'^(me)[^n]\S{1,}', term):
+                    if re.search(r'^(me)(?!ng)\S{1,}', term) and re.search(r'^(me)[^nm]\S{1,}', term):
                         term = re.sub(r'^(me)','', term)
                     if re.search(r'^(be|te|pe)[^kmrbl]\S{1,}', term):
                         if re.search(r'^(pe)[n]\S{1,}', term):
@@ -92,7 +94,8 @@ class ECSP():
                 if re.search(r'^(be|te|me|pe)\S{1,}', term):
                     if re.search(r'^(be)\S{1,}', term):
                         if re.search(r'^(ber)[aiueo]\S{1,}', term): #1
-                            term = re.sub(r'^(ber)','', term)
+                            if not re.search(r'^(berita)\S{0,}', term):
+                                term = re.sub(r'^(ber)','', term)
                         elif re.search(r'^(ber)[^aiueor]([A-Za-z\-]+)(?!er)\S{1,}', term): #2
                             term = re.sub(r'^(ber)','', term)
                         elif re.search(r'^(ber)[^aiueor]([A-Za-z\-]+)er[aiueo]\S{1,}', term): #3
@@ -222,7 +225,7 @@ class ECSP():
 
                 # 6. hapus akhiran
                 if re.search(r'(i|kan|an)$', term):
-                    if re.search(r'^(pribadi|handai)$', term):
+                    if re.search(r'^(pribadi|handai|korban)$', term):
                         pass
                     else:
                         term = re.sub(r'(i|kan|an)$','', term)

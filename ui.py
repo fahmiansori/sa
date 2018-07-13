@@ -639,6 +639,9 @@ class Ui_MainWindow(object):
         self.pushButton_setup_next.setEnabled(False)
         self.pushButton_preprocessing_next.setEnabled(False)
 
+        # tab fix word
+        self.pushButton_fixword_next.setEnabled(False)
+
         # tab preprocessing
         self.radioButton_preprocessing_withpreprocessing.setChecked(True)
         self.radioButton_preprocessing_nofeatureselection.setChecked(True)
@@ -670,7 +673,7 @@ class Ui_MainWindow(object):
         self.pushButton_setup_next.clicked.connect(lambda: self.setupNext())
 
         # tab fixword
-        regexLetter = QtCore.QRegExp(r'^[a-z]*$')
+        regexLetter = QtCore.QRegExp(r'^[a-z\s]*$') #!!!!!!!!!!!!!!!!!!!!!!!!!!
         validatorWordFix = QtGui.QRegExpValidator(regexLetter,self.lineEdit_fixword_wordfix)
         self.lineEdit_fixword_wordfix.setValidator(validatorWordFix)
         self.pushButton_fixword_save.clicked.connect(self.fixWordSave)
@@ -789,16 +792,18 @@ class Ui_MainWindow(object):
     def setupNext(self):
         self.selectedTable = str(self.comboBox_setup_table.currentText())
         if self.selectedTable:
+            self.pushButton_setup_next.setEnabled(False)
             self.app.setTrainingTable(self.selectedTable)
             self.app.setTextCol(self.setupTextCol)
             self.app.setClassCol(self.setupClassCol)
             self.app.setExceptionalFeature(self.exceptCol)
-            # CHECK POINT >> Add checker for abbreviation words! Then add to DB!
-            # NOTE : Definisi kata singkatan, digunakan untuk buat aturan deteksi singkatan
+            qc = QtCore.QCoreApplication
+            self.app.chekForUnidenChar(qc=qc)
             self.fixWordTableRefresh(self.gridLayout_10)
             self.tabWidget.setTabEnabled(1,True)
-            self.tabWidget.setTabEnabled(2,True)
+                # self.tabWidget.setTabEnabled(2,True)
             self.tabWidget.setCurrentIndex(1)
+            self.pushButton_setup_next.setEnabled(True)
 
 # tab fixword
     def fixWordTableRefresh(self,lay):
@@ -847,8 +852,14 @@ class Ui_MainWindow(object):
                         itemText = ""
                     item = QtWidgets.QTableWidgetItem(itemText)
                     self.tableWidget_fixword.setItem(i, j, item)
+                    QtCore.QCoreApplication.processEvents()
+                QtCore.QCoreApplication.processEvents()
         self.tableWidget_fixword.doubleClicked.connect(lambda: self.fixWordgetItem(cols_q))
         lay.addWidget(self.tableWidget_fixword)
+        QtCore.QCoreApplication.processEvents()
+
+        self.pushButton_fixword_next.setEnabled(True)
+        self.tabWidget.setTabEnabled(2,True)
 
     def fixWordgetItem(self,cols_q):
 
@@ -909,6 +920,7 @@ class Ui_MainWindow(object):
     def preprocessProcess(self):
         self.progressBar_preprocessing.setValue(0)
         self.pushButton_preprocessing_process.setEnabled(False)
+        self.pushButton_preprocessing_next.setEnabled(False)
         if self.preprocessing_doFeatureSelection:
             if self.lineEdit_preprocessing_numberoffeature.text():
                 self.preprocessing_numFeatureToRetain = self.lineEdit_preprocessing_numberoffeature.text()
@@ -928,6 +940,7 @@ class Ui_MainWindow(object):
 
         self.preprocessTable(self.gridLayout_13,features)
         self.pushButton_preprocessing_process.setEnabled(True)
+        self.pushButton_preprocessing_next.setEnabled(True)
 
     def preprocessTable(self,lay,features):
         import sip
@@ -954,7 +967,9 @@ class Ui_MainWindow(object):
             feature = features['vsm']['feature']
             vsm = features['vsm']['vsm']
 
-            cols = [i for i in feature]
+            cols.append("original")
+            cols_temp = [i for i in feature]
+            cols.extend(cols_temp)
             colCount = len(cols)
             rowCount = len(feature.index)
 
@@ -962,13 +977,12 @@ class Ui_MainWindow(object):
             vms_colCount = len(vms_cols)
             vms_rowCount = len(vsm.index)
 
-            # CHECK POINT > kurang hitung dibawah ini dan tampilkan di window
             totalFeatureBefore = features['featurebefore']
             totalFeatureAfter = rowCount
             reduction = 0
             if totalFeatureBefore != 0:
-                reduction = totalFeatureAfter/totalFeatureBefore*100 # rumus masih salah
-                reduction = round(100-reduction) # rumus masih salah
+                reduction = totalFeatureAfter/totalFeatureBefore*100
+                reduction = round(100-reduction)
             self.label_preprocessing_feature_before.setText("Creating table ... Please wait ...")
 
         #for table feature
@@ -1002,10 +1016,16 @@ class Ui_MainWindow(object):
 
         if features != None:
             feature = features['vsm']['feature']
+            oritext = features['oritext']
             vsm = features['vsm']['vsm']
+
+            cols = [i for i in feature]
 
             for index,row in feature.iterrows():
                 jj = 0
+                item = QtWidgets.QTableWidgetItem(oritext[row[cols[0]]])
+                self.tableWidget_preprocessing_features_list_after.setItem(index, jj, item)
+                jj+=1
                 for j in cols:
                     feat = row[j]
                     if not feat:
